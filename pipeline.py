@@ -85,12 +85,30 @@ class TrainingPipeline:
         data    = fetch_multiple(self.symbols)
         summary = {}
 
+        # ── Stage 1: Pre-train the Pattern Transformer on full corpus ─────
+        logger.info("=== Stage 1: Pattern Transformer Pre-training ===")
+        from transformer_pipeline import TransformerPipeline
+        self._transformer_pipeline = TransformerPipeline(horizon=self.horizon)
+        try:
+            pretrain_auc = self._transformer_pipeline.pretrain(
+                data, tune=False   # set tune=True to run Optuna on architecture
+            )
+            logger.info(f"Pattern Transformer pre-train AUC: {pretrain_auc:.4f}")
+        except Exception as e:
+            logger.error(f"Transformer pre-training failed: {e}", exc_info=True)
+            self._transformer_pipeline = None
+
+        # ── Stage 2: Per-symbol training (XGB + LGBM + LSTM + fine-tune) ─
+        logger.info("=== Stage 2: Per-symbol training ===")
         for sym in self.symbols:
             if sym not in data:
                 logger.warning(f"Skipping {sym}: no data")
                 continue
             try:
-                metrics = self._train_symbol(sym, data[sym], vnindex)
+                metrics = self._train_symbol(
+                    sym, data[sym], vnindex,
+                    transformer_pipeline=self._transformer_pipeline
+                )
                 summary[sym] = metrics
             except Exception as e:
                 logger.error(f"Training failed for {sym}: {e}", exc_info=True)
@@ -98,7 +116,13 @@ class TrainingPipeline:
         self._save_summary(summary)
         return summary
 
-    def _train_symbol(self, sym: str, ohlcv: pd.DataFrame, vnindex) -> dict:
+    def _train_symbol(
+        self,
+        sym: str,
+        ohlcv: pd.DataFrame,
+        vnindex,
+        transformer_pipeline=None,
+    ) -> dict:
         logger.info(f"--- {sym} -----------------------------------")
 
         # ── Optional: sentiment features via Claude LLM ────────────────────
@@ -191,12 +215,61 @@ class TrainingPipeline:
 
         ensemble.fit(X_tr, y_tr, X_val, y_val)
 
-        # ── Tune ensemble weights on validation set ────────────────────────
+        # ── Stage 2b: Fine-tune Pattern Transformer on this symbol ────────
+        transformer_val_proba = None
+        if transformer_pipeline is not None:
+            try:
+                transformer_pipeline.finetune_symbol(sym, ohlcv)
+                transformer_val_proba = np.array([
+                    transformer_pipeline.predict(sym, ohlcv.iloc[:i+1])
+                    for i in range(len(ohlcv) - len(X_val) - 1,
+                                   len(ohlcv) - 1)
+                ])
+                # Simpler: just predict on the validation feature set using full ohlcv
+                # The transformer uses raw OHLCV, not the feature matrix
+                val_start_idx = len(ohlcv) - len(X_te) - len(X_val)
+                val_ohlcv_seqs = []
+                for vi in range(len(X_val)):
+                    end = val_start_idx + vi + 1
+                    start = max(0, end - 60)
+                    val_ohlcv_seqs.append(ohlcv.iloc[start:end])
+
+                from price_tokenizer import PriceTokenizer
+                tk = PriceTokenizer()
+                tr_val_probs = []
+                for seq_ohlcv in val_ohlcv_seqs:
+                    tokens = tk.encode(seq_ohlcv)
+                    if len(tokens) >= 5:
+                        import numpy as np
+                        X_seq = np.array([tokens[-min(60, len(tokens)):]], dtype=np.int32)
+                        p = transformer_pipeline._finetuned_models.get(sym)
+                        if p and p.model:
+                            pr = p.predict_proba(X_seq)
+                            tr_val_probs.append(float(pr[0]) if not np.isnan(pr[0]) else 0.5)
+                        else:
+                            tr_val_probs.append(0.5)
+                    else:
+                        tr_val_probs.append(0.5)
+                transformer_val_proba = np.array(tr_val_probs)
+                logger.info(f"  Transformer val predictions ready: {len(transformer_val_proba)} samples")
+            except Exception as e:
+                logger.warning(f"  Transformer fine-tuning failed for {sym}: {e}")
+                transformer_val_proba = None
+
+        # ── Tune ensemble weights (4 models if transformer available) ─────
         if self.tune:
             xgb_val  = ensemble.xgb.predict_proba(X_val)
             lgbm_val = ensemble.lgbm.predict_proba(X_val)
             lstm_val = ensemble.lstm.predict_proba(X_val)
-            ensemble.weights = tune_ensemble_weights(xgb_val, lgbm_val, lstm_val, y_val)
+
+            if transformer_val_proba is not None and len(transformer_val_proba) == len(y_val):
+                # 4-model weight optimisation
+                ensemble.weights = _tune_four_model_weights(
+                    xgb_val, lgbm_val, lstm_val, transformer_val_proba, y_val
+                )
+                ensemble.weights["transformer"] = ensemble.weights.pop("transformer", 0.15)
+            else:
+                ensemble.weights = tune_ensemble_weights(xgb_val, lgbm_val, lstm_val, y_val)
 
         # ── Evaluate on test ───────────────────────────────────────────────
         metrics = _evaluate(ensemble, X_te, y_te, prefix=f"  TEST {sym}")

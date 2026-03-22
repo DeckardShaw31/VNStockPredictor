@@ -188,3 +188,45 @@ def tune_ensemble_weights(
     }
     logger.info(f"Optimal weights: {weights}  AUC={study.best_value:.4f}")
     return weights
+
+
+def _tune_four_model_weights(
+    xgb_proba, lgbm_proba, lstm_proba, transformer_proba, y_true
+) -> dict:
+    """Optimise 4-model ensemble blend weights (XGB + LGBM + LSTM + Transformer)."""
+    import optuna
+    from sklearn.metrics import roc_auc_score
+    import numpy as np
+
+    logger.info("Tuning 4-model ensemble weights (XGB+LGBM+LSTM+Transformer)...")
+
+    lstm_valid        = ~np.isnan(lstm_proba)
+    transformer_valid = ~np.isnan(transformer_proba)
+    valid = lstm_valid & transformer_valid
+
+    def objective(trial):
+        w_xgb  = trial.suggest_float("w_xgb",  0.1, 0.6)
+        w_lgbm = trial.suggest_float("w_lgbm", 0.1, 0.6)
+        w_lstm = trial.suggest_float("w_lstm", 0.0, 0.4)
+        w_tr   = trial.suggest_float("w_tr",   0.0, 0.4)
+        total  = w_xgb + w_lgbm + w_lstm + w_tr
+        blend  = (
+            w_xgb  * xgb_proba[valid]         +
+            w_lgbm * lgbm_proba[valid]        +
+            w_lstm * lstm_proba[valid]         +
+            w_tr   * transformer_proba[valid]
+        ) / total
+        return roc_auc_score(y_true[valid], blend)
+
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=100, show_progress_bar=False)
+    w = study.best_params
+    total = w["w_xgb"] + w["w_lgbm"] + w["w_lstm"] + w["w_tr"]
+    weights = {
+        "xgb":         w["w_xgb"]  / total,
+        "lgbm":        w["w_lgbm"] / total,
+        "lstm":        w["w_lstm"] / total,
+        "transformer": w["w_tr"]   / total,
+    }
+    logger.info(f"4-model weights: {weights}  AUC={study.best_value:.4f}")
+    return weights
