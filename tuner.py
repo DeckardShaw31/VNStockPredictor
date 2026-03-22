@@ -77,14 +77,12 @@ def _lgbm_objective(trial, X_tr, y_tr, X_val, y_val):
     return roc_auc_score(y_val, prob)
 
 
-# ── LSTM Objective ─────────────────────────────────────────────────────────────
+# ── LSTM Objective (PyTorch) ───────────────────────────────────────────────────
 
 def _lstm_objective(trial, X_tr, y_tr, X_val, y_val):
-    import tensorflow as tf
-    from sklearn.preprocessing import StandardScaler
+    from sklearn.metrics import roc_auc_score
 
     sp = config.LSTM_SEARCH_SPACE
-    seq_len = 30
     params = {
         "units_1":      trial.suggest_int("units_1", *sp["units_1"]),
         "units_2":      trial.suggest_int("units_2", *sp["units_2"]),
@@ -95,11 +93,13 @@ def _lstm_objective(trial, X_tr, y_tr, X_val, y_val):
     }
 
     from models import LSTMModel
-    mdl = LSTMModel(seq_len=seq_len, params=params)
+    mdl = LSTMModel(seq_len=30, params=params)
     mdl.fit(X_tr, y_tr, X_val, y_val)
-    prob = mdl.predict_proba(X_val)
+    prob  = mdl.predict_proba(X_val)
     valid = ~np.isnan(prob)
-    return roc_auc_score(y_val[valid], prob[valid])
+    if valid.sum() < 5 or len(set(y_val[valid])) < 2:
+        return 0.5
+    return float(roc_auc_score(y_val[valid], prob[valid]))
 
 
 # ── Public Tuning Functions ────────────────────────────────────────────────────
@@ -109,13 +109,21 @@ def tune_xgb(
     n_trials: int = config.OPTUNA_TRIALS_XGB,
     timeout: int = config.OPTUNA_TIMEOUT_SEC,
 ) -> dict:
-    logger.info(f"Tuning XGBoost ({n_trials} trials)…")
+    logger.info(f"Tuning XGBoost ({n_trials} trials)...")
     study = optuna.create_study(direction="maximize")
     study.optimize(
         lambda t: _xgb_objective(t, X_tr, y_tr, X_val, y_val),
         n_trials=n_trials, timeout=timeout, show_progress_bar=False,
         catch=(Exception,),
     )
+    completed = [t for t in study.trials if t.state.name == "COMPLETE"]
+    if not completed:
+        logger.warning("XGB tuning: all trials failed — using default params")
+        return {
+            "n_estimators": 300, "max_depth": 6, "learning_rate": 0.05,
+            "subsample": 0.8, "colsample_bytree": 0.8,
+            "eval_metric": "logloss", "random_state": config.RANDOM_SEED, "n_jobs": -1,
+        }
     best = study.best_params
     best.update({"eval_metric": "logloss",
                  "random_state": config.RANDOM_SEED, "n_jobs": -1})
@@ -128,13 +136,21 @@ def tune_lgbm(
     n_trials: int = config.OPTUNA_TRIALS_LGBM,
     timeout: int = config.OPTUNA_TIMEOUT_SEC,
 ) -> dict:
-    logger.info(f"Tuning LightGBM ({n_trials} trials)…")
+    logger.info(f"Tuning LightGBM ({n_trials} trials)...")
     study = optuna.create_study(direction="maximize")
     study.optimize(
         lambda t: _lgbm_objective(t, X_tr, y_tr, X_val, y_val),
         n_trials=n_trials, timeout=timeout, show_progress_bar=False,
         catch=(Exception,),
     )
+    completed = [t for t in study.trials if t.state.name == "COMPLETE"]
+    if not completed:
+        logger.warning("LGBM tuning: all trials failed — using default params")
+        return {
+            "n_estimators": 300, "num_leaves": 63, "learning_rate": 0.05,
+            "feature_fraction": 0.8, "bagging_fraction": 0.8, "bagging_freq": 5,
+            "random_state": config.RANDOM_SEED, "n_jobs": -1, "verbose": -1,
+        }
     best = study.best_params
     best.update({"random_state": config.RANDOM_SEED, "n_jobs": -1, "verbose": -1})
     logger.info(f"LGBM best AUC: {study.best_value:.4f}  params={best}")
@@ -146,13 +162,20 @@ def tune_lstm(
     n_trials: int = config.OPTUNA_TRIALS_LSTM,
     timeout: int = config.OPTUNA_TIMEOUT_SEC,
 ) -> dict:
-    logger.info(f"Tuning LSTM ({n_trials} trials)…")
+    logger.info(f"Tuning LSTM ({n_trials} trials)...")
     study = optuna.create_study(direction="maximize")
     study.optimize(
         lambda t: _lstm_objective(t, X_tr, y_tr, X_val, y_val),
         n_trials=n_trials, timeout=timeout, show_progress_bar=False,
         catch=(Exception,),
     )
+    completed = [t for t in study.trials if t.state.name == "COMPLETE"]
+    if not completed:
+        logger.warning("LSTM tuning: all trials failed — using default params")
+        return {
+            "units_1": 64, "units_2": 32, "dropout": 0.2,
+            "learning_rate": 5e-4, "batch_size": 32, "epochs": 30,
+        }
     best = study.best_params
     logger.info(f"LSTM best AUC: {study.best_value:.4f}  params={best}")
     return best

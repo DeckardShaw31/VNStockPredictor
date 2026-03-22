@@ -1,142 +1,106 @@
 """
-pattern_transformer.py — A small GPT-style transformer trained locally
-on tokenized Vietnam stock price sequences.
+pattern_transformer.py — GPT-style transformer for price pattern recognition.
+Implemented in PyTorch — works on Python 3.13, no TensorFlow required.
 
-Core idea (from the video concept):
-  GPT learns: "the quick brown fox" → predicts "jumps"
-  This learns: "FLAT|VOL_LOW|DOJI, SMALL_UP|VOL_HIGH|BULL, ..." → predicts direction
-
-The transformer uses self-attention to discover which historical patterns
-most reliably precede upward or downward moves. This is pattern recognition
-through attention — the same mechanism that makes LLMs understand language,
-applied to market microstructure patterns.
+Core idea:
+  GPT learns: "the quick brown fox" -> predicts "jumps"
+  This learns: "FLAT|DOJI, BIG_UP|BULL_STR|VOL_HIGH, ..." -> predicts UP/DOWN
 
 Architecture:
-  - Embedding layer: token_id → 64-dim vector
-  - Positional encoding: learnable position embeddings
-  - N transformer blocks: multi-head attention + FFN + LayerNorm
-  - Direction head: binary classification (up/down)
+  Token + Positional Embedding
+  N x TransformerBlock (causal multi-head attention + FFN + LayerNorm)
+  Last-token + Global-avg pooling -> Dense -> Sigmoid
 
-This is a LOCAL model — trained on your machine, no API needed.
-Training data: tokenized OHLCV sequences from all symbols in your watchlist.
+Runs entirely locally. No API. No internet required during inference.
 """
 
 import logging
 import pickle
 from pathlib import Path
-from typing import Optional, Tuple, List
+from typing import Optional
 
 import numpy as np
 
 logger = logging.getLogger("pattern_transformer")
 
 
-# ── Transformer Architecture ───────────────────────────────────────────────────
+# ── PyTorch Model ──────────────────────────────────────────────────────────────
 
-def build_pattern_transformer(
+def _build_torch_transformer(
     vocab_size: int,
-    seq_len: int = 60,
-    embed_dim: int = 64,
-    num_heads: int = 4,
-    num_blocks: int = 3,
-    ff_dim: int = 128,
-    dropout_rate: float = 0.1,
-) -> "tf.keras.Model":
-    """
-    Build a GPT-style transformer for price pattern classification.
+    seq_len: int,
+    embed_dim: int,
+    num_heads: int,
+    num_blocks: int,
+    ff_dim: int,
+    dropout: float,
+):
+    import torch
+    import torch.nn as nn
+    import math
 
-    Architecture:
-        Input: (batch, seq_len) integer token IDs
-        → Token Embedding + Positional Embedding
-        → N × TransformerBlock (causal self-attention + FFN)
-        → GlobalAveragePooling
-        → Dense(64, relu) → Dropout → Dense(1, sigmoid)
-        Output: (batch, 1) probability of UP move
+    class CausalTransformerBlock(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.attn  = nn.MultiheadAttention(embed_dim, num_heads,
+                                                dropout=dropout, batch_first=True)
+            self.ff    = nn.Sequential(
+                nn.Linear(embed_dim, ff_dim), nn.GELU(),
+                nn.Dropout(dropout),
+                nn.Linear(ff_dim, embed_dim),
+            )
+            self.norm1 = nn.LayerNorm(embed_dim)
+            self.norm2 = nn.LayerNorm(embed_dim)
+            self.drop  = nn.Dropout(dropout)
 
-    Causal masking ensures the model can only attend to past tokens,
-    preserving temporal ordering — exactly like GPT.
-    """
-    import tensorflow as tf
-    from tensorflow.keras import layers, Model, Input
+        def forward(self, x, causal_mask):
+            attn_out, _ = self.attn(x, x, x, attn_mask=causal_mask,
+                                    is_causal=True, need_weights=False)
+            x = self.norm1(x + self.drop(attn_out))
+            x = self.norm2(x + self.ff(x))
+            return x
 
-    # ── Token + Positional Embeddings ──────────────────────────────────────
-    token_input = Input(shape=(seq_len,), dtype=tf.int32, name="token_input")
+    class PatternTransformerNet(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.tok_emb = nn.Embedding(vocab_size, embed_dim, padding_idx=vocab_size - 3)
+            self.pos_emb = nn.Embedding(seq_len, embed_dim)
+            self.drop    = nn.Dropout(dropout)
+            self.blocks  = nn.ModuleList([CausalTransformerBlock() for _ in range(num_blocks)])
+            self.head    = nn.Sequential(
+                nn.Linear(embed_dim * 2, 64), nn.GELU(),
+                nn.Dropout(dropout),
+                nn.Linear(64, 1), nn.Sigmoid(),
+            )
+            self.seq_len = seq_len
 
-    # Token embedding
-    x = layers.Embedding(
-        input_dim=vocab_size,
-        output_dim=embed_dim,
-        name="token_embedding",
-    )(token_input)
+        def forward(self, x):
+            B, T = x.shape
+            pos  = torch.arange(T, device=x.device).unsqueeze(0)
+            emb  = self.drop(self.tok_emb(x) + self.pos_emb(pos))
 
-    # Learnable positional embedding (better than fixed sinusoidal for short sequences)
-    positions = tf.range(start=0, limit=seq_len, delta=1)
-    pos_emb = layers.Embedding(
-        input_dim=seq_len,
-        output_dim=embed_dim,
-        name="position_embedding",
-    )(positions)
-    x = x + pos_emb   # (batch, seq_len, embed_dim)
+            # Causal mask: upper triangle = -inf
+            mask = torch.triu(
+                torch.full((T, T), float("-inf"), device=x.device), diagonal=1
+            )
+            for block in self.blocks:
+                emb = block(emb, mask)
 
-    x = layers.Dropout(dropout_rate)(x)
+            last   = emb[:, -1, :]                        # (B, D)
+            pooled = emb.mean(dim=1)                       # (B, D)
+            out    = self.head(torch.cat([last, pooled], dim=-1))
+            return out.squeeze(1)
 
-    # ── Transformer Blocks ─────────────────────────────────────────────────
-    for block_i in range(num_blocks):
-        # Causal multi-head self-attention
-        # use_causal_mask ensures each position only attends to previous positions
-        attn_out = layers.MultiHeadAttention(
-            num_heads=num_heads,
-            key_dim=embed_dim // num_heads,
-            dropout=dropout_rate,
-            name=f"attention_{block_i}",
-        )(x, x, use_causal_mask=True)
-
-        # Add & Norm (residual)
-        x = layers.LayerNormalization(epsilon=1e-6, name=f"norm1_{block_i}")(x + attn_out)
-
-        # Feed-forward network
-        ffn = layers.Dense(ff_dim, activation="gelu", name=f"ffn1_{block_i}")(x)
-        ffn = layers.Dropout(dropout_rate)(ffn)
-        ffn = layers.Dense(embed_dim, name=f"ffn2_{block_i}")(ffn)
-
-        # Add & Norm (residual)
-        x = layers.LayerNormalization(epsilon=1e-6, name=f"norm2_{block_i}")(x + ffn)
-
-    # ── Classification Head ────────────────────────────────────────────────
-    # Use the last token's representation (like GPT's [CLS] approach)
-    last_token = x[:, -1, :]   # (batch, embed_dim)
-
-    # Also pool across the sequence for global context
-    pooled = layers.GlobalAveragePooling1D()(x)   # (batch, embed_dim)
-
-    combined = layers.Concatenate()([last_token, pooled])   # (batch, embed_dim*2)
-    combined = layers.Dense(64, activation="gelu", name="head_dense")(combined)
-    combined = layers.Dropout(dropout_rate)(combined)
-    output   = layers.Dense(1, activation="sigmoid", name="output")(combined)
-
-    model = Model(inputs=token_input, outputs=output, name="PatternTransformer")
-
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
-        loss="binary_crossentropy",
-        metrics=["accuracy"],
-        jit_compile=False,
-    )
-
-    return model
+    return PatternTransformerNet()
 
 
-# ── PatternTransformerModel Wrapper ───────────────────────────────────────────
+# ── Wrapper class ──────────────────────────────────────────────────────────────
 
 class PatternTransformerModel:
     """
-    Wrapper around the Keras transformer model with the same interface
-    as XGBModel / LGBMModel / LSTMModel for drop-in ensemble integration.
-
-    This model operates on TOKEN sequences, not raw feature vectors.
-    It requires a PriceTokenizer to convert OHLCV → tokens first.
+    Wrapper around the PyTorch transformer with the same interface as
+    XGBModel / LGBMModel / LSTMModel for drop-in ensemble use.
     """
-
     name = "transformer"
 
     def __init__(
@@ -157,98 +121,110 @@ class PatternTransformerModel:
             "batch_size":   32,
             "epochs":       40,
         }
-        self.model      = None
-        self.tokenizer  = None
+        self.model = None
 
     def _get_vocab_size(self):
         from price_tokenizer import TOTAL_VOCAB
         return self.vocab_size or TOTAL_VOCAB
 
-    def fit(
-        self,
-        X_train: np.ndarray,   # (n, seq_len) token IDs
-        y_train: np.ndarray,   # (n,) binary labels
-        X_val: Optional[np.ndarray] = None,
-        y_val: Optional[np.ndarray] = None,
-    ):
-        """Train the transformer on tokenized sequences."""
-        import tensorflow as tf
-        import os
-        os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
-
-        if len(X_train) == 0:
-            logger.warning("[transformer] No training data available")
-            return self
-
-        # Truncate/pad sequences to seq_len
-        X_train = self._pad_sequences(X_train)
-        if X_val is not None:
-            X_val = self._pad_sequences(X_val)
-
-        p = self.params
-        self.model = build_pattern_transformer(
-            vocab_size    = self._get_vocab_size(),
-            seq_len       = self.seq_len,
-            embed_dim     = p["embed_dim"],
-            num_heads     = p["num_heads"],
-            num_blocks    = p["num_blocks"],
-            ff_dim        = p["ff_dim"],
-            dropout_rate  = p["dropout_rate"],
-        )
-
-        # Recompile with tuned LR
-        self.model.optimizer.learning_rate.assign(p["learning_rate"])
-
-        callbacks = [
-            tf.keras.callbacks.EarlyStopping(
-                monitor="val_loss" if X_val is not None else "loss",
-                patience=8, restore_best_weights=True, verbose=0,
-            ),
-            tf.keras.callbacks.ReduceLROnPlateau(
-                monitor="val_loss" if X_val is not None else "loss",
-                factor=0.5, patience=4, verbose=0,
-            ),
-        ]
-
-        val_data = (X_val, y_val) if X_val is not None and len(X_val) > 0 else None
-
-        self.model.fit(
-            X_train, y_train,
-            validation_data=val_data,
-            epochs=p["epochs"],
-            batch_size=p["batch_size"],
-            callbacks=callbacks,
-            verbose=0,
-        )
-
-        logger.info(f"[transformer] Training complete on {len(X_train)} sequences")
-        return self
-
-    def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        """Returns probability of UP for each sequence."""
-        if self.model is None or len(X) == 0:
-            return np.full(len(X), np.nan)
-        X_padded = self._pad_sequences(X)
-        return self.model.predict(X_padded, verbose=0).flatten()
-
     def _pad_sequences(self, X: np.ndarray) -> np.ndarray:
-        """Pad or truncate sequences to self.seq_len."""
         from price_tokenizer import PAD_TOKEN
-        n = len(X)
-        result = np.full((n, self.seq_len), PAD_TOKEN, dtype=np.int32)
+        n      = len(X)
+        result = np.full((n, self.seq_len), PAD_TOKEN, dtype=np.int64)
         for i, seq in enumerate(X):
-            seq = np.asarray(seq, dtype=np.int32)
+            seq = np.asarray(seq, dtype=np.int64)
             if len(seq) >= self.seq_len:
                 result[i] = seq[-self.seq_len:]
             else:
                 result[i, -len(seq):] = seq
         return result
 
+    def fit(self, X_train, y_train, X_val=None, y_val=None):
+        import torch
+        import torch.nn as nn
+        from torch.utils.data import TensorDataset, DataLoader
+
+        if len(X_train) == 0:
+            return self
+
+        p   = self.params
+        # num_heads must divide embed_dim
+        while p["embed_dim"] % p["num_heads"] != 0:
+            p["num_heads"] = max(1, p["num_heads"] - 1)
+
+        self.model = _build_torch_transformer(
+            vocab_size = self._get_vocab_size(),
+            seq_len    = self.seq_len,
+            embed_dim  = p["embed_dim"],
+            num_heads  = p["num_heads"],
+            num_blocks = p["num_blocks"],
+            ff_dim     = p["ff_dim"],
+            dropout    = p["dropout_rate"],
+        )
+
+        Xp = torch.tensor(self._pad_sequences(X_train), dtype=torch.long)
+        yp = torch.tensor(y_train, dtype=torch.float32)
+        loader = DataLoader(TensorDataset(Xp, yp),
+                            batch_size=p["batch_size"], shuffle=False)
+
+        val_loader = None
+        if X_val is not None and len(X_val) > 0:
+            Xvp = torch.tensor(self._pad_sequences(X_val), dtype=torch.long)
+            yvp = torch.tensor(y_val, dtype=torch.float32)
+            val_loader = DataLoader(TensorDataset(Xvp, yvp), batch_size=64)
+
+        opt      = torch.optim.Adam(self.model.parameters(), lr=p["learning_rate"])
+        sched    = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, patience=4, factor=0.5)
+        loss_fn  = nn.BCELoss()
+        best_val = float("inf")
+        patience = 8
+        no_impr  = 0
+        best_st  = None
+
+        for epoch in range(p["epochs"]):
+            self.model.train()
+            for xb, yb in loader:
+                opt.zero_grad()
+                loss_fn(self.model(xb), yb).backward()
+                nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+                opt.step()
+
+            if val_loader:
+                self.model.eval()
+                vl = 0.0
+                with torch.no_grad():
+                    for xb, yb in val_loader:
+                        vl += loss_fn(self.model(xb), yb).item()
+                vl /= len(val_loader)
+                sched.step(vl)
+                if vl < best_val - 1e-4:
+                    best_val = vl
+                    no_impr  = 0
+                    best_st  = {k: v.clone() for k, v in self.model.state_dict().items()}
+                else:
+                    no_impr += 1
+                    if no_impr >= patience:
+                        break
+
+        if best_st:
+            self.model.load_state_dict(best_st)
+        return self
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        import torch
+        if self.model is None or len(X) == 0:
+            return np.full(len(X), np.nan)
+        self.model.eval()
+        Xp = torch.tensor(self._pad_sequences(X), dtype=torch.long)
+        with torch.no_grad():
+            return self.model(Xp).numpy().flatten()
+
     def save(self, path: str):
+        import torch
         base = Path(path)
         base.parent.mkdir(parents=True, exist_ok=True)
         if self.model is not None:
-            self.model.save(str(base) + ".keras")
+            torch.save(self.model.state_dict(), str(base) + "_weights.pt")
         with open(str(base) + "_config.pkl", "wb") as f:
             pickle.dump({
                 "seq_len":    self.seq_len,
@@ -258,44 +234,59 @@ class PatternTransformerModel:
 
     @classmethod
     def load(cls, path: str) -> "PatternTransformerModel":
-        import tensorflow as tf
+        import torch
         base = Path(path)
         with open(str(base) + "_config.pkl", "rb") as f:
             cfg = pickle.load(f)
         obj = cls(**cfg)
-        keras_path = str(base) + ".keras"
-        if Path(keras_path).exists():
-            obj.model = tf.keras.models.load_model(keras_path)
+        weights_path = str(base) + "_weights.pt"
+        if Path(weights_path).exists():
+            p = obj.params
+            while p["embed_dim"] % p["num_heads"] != 0:
+                p["num_heads"] = max(1, p["num_heads"] - 1)
+            obj.model = _build_torch_transformer(
+                vocab_size = obj._get_vocab_size(),
+                seq_len    = obj.seq_len,
+                embed_dim  = p["embed_dim"],
+                num_heads  = p["num_heads"],
+                num_blocks = p["num_blocks"],
+                ff_dim     = p["ff_dim"],
+                dropout    = p["dropout_rate"],
+            )
+            obj.model.load_state_dict(
+                torch.load(weights_path, map_location="cpu", weights_only=True)
+            )
         return obj
 
 
-# ── Optuna Objective for Transformer ──────────────────────────────────────────
+# ── Optuna objective ───────────────────────────────────────────────────────────
 
 def tune_transformer_objective(trial, X_tr, y_tr, X_val, y_val) -> float:
-    """Optuna objective — tunes transformer hyperparameters."""
     from sklearn.metrics import roc_auc_score
 
-    params = {
-        "embed_dim":    trial.suggest_categorical("embed_dim",    [32, 64, 128]),
-        "num_heads":    trial.suggest_categorical("num_heads",    [2, 4, 8]),
-        "num_blocks":   trial.suggest_int("num_blocks",           2, 5),
-        "ff_dim":       trial.suggest_categorical("ff_dim",       [64, 128, 256]),
-        "dropout_rate": trial.suggest_float("dropout_rate",       0.05, 0.4),
-        "learning_rate":trial.suggest_float("learning_rate",      1e-4, 5e-3, log=True),
-        "batch_size":   trial.suggest_categorical("batch_size",   [16, 32, 64]),
-        "epochs":       trial.suggest_int("epochs",               20, 60),
-    }
+    embed_dim = trial.suggest_categorical("embed_dim", [32, 64, 128])
+    num_heads = trial.suggest_categorical("num_heads", [2, 4, 8])
+    # ensure divisibility
+    while embed_dim % num_heads != 0:
+        num_heads = max(1, num_heads - 1)
 
-    # num_heads must divide embed_dim
-    if params["embed_dim"] % params["num_heads"] != 0:
-        return 0.5
+    params = {
+        "embed_dim":    embed_dim,
+        "num_heads":    num_heads,
+        "num_blocks":   trial.suggest_int("num_blocks", 2, 4),
+        "ff_dim":       trial.suggest_categorical("ff_dim", [64, 128, 256]),
+        "dropout_rate": trial.suggest_float("dropout_rate", 0.05, 0.4),
+        "learning_rate":trial.suggest_float("learning_rate", 1e-4, 5e-3, log=True),
+        "batch_size":   trial.suggest_categorical("batch_size", [16, 32, 64]),
+        "epochs":       trial.suggest_int("epochs", 15, 40),
+    }
 
     model = PatternTransformerModel(params=params)
     model.fit(X_tr, y_tr, X_val, y_val)
     if model.model is None:
         return 0.5
 
-    prob = model.predict_proba(X_val)
+    prob  = model.predict_proba(X_val)
     valid = ~np.isnan(prob)
     if valid.sum() < 5 or len(set(y_val[valid])) < 2:
         return 0.5

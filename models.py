@@ -131,7 +131,7 @@ class LGBMModel:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# LSTM Classifier  (TensorFlow / Keras)
+# LSTM Classifier  (PyTorch — works on Python 3.13, no TensorFlow needed)
 # ══════════════════════════════════════════════════════════════════════════════
 
 class LSTMModel:
@@ -152,13 +152,11 @@ class LSTMModel:
             "epochs": 40,
         }
         self.model   = None
-        self.scaler  = None   # sklearn StandardScaler fitted on training data
+        self.scaler  = None
 
     # ── Data prep ──────────────────────────────────────────────────────────
 
     def _make_sequences(self, X: np.ndarray) -> Optional[np.ndarray]:
-        """Roll X into overlapping windows of length seq_len.
-        Returns None if X is too short to form even one sequence."""
         n, f = X.shape
         if n < self.seq_len:
             return None
@@ -168,112 +166,168 @@ class LSTMModel:
         return seqs
 
     def _align_labels(self, y: np.ndarray) -> np.ndarray:
-        """Labels aligned to the last timestep of each sequence."""
         return y[self.seq_len - 1:]
 
-    # ── Build ───────────────────────────────────────────────────────────────
+    # ── Build (PyTorch) ─────────────────────────────────────────────────────
 
-    def _build(self, n_features: int):
-        import tensorflow as tf
-        from tensorflow.keras import layers, Model, Input
+    def _build_torch(self, n_features: int):
+        import torch
+        import torch.nn as nn
 
-        p   = self.params
-        inp = Input(shape=(self.seq_len, n_features))
-        x   = layers.LSTM(p["units_1"], return_sequences=True)(inp)
-        x   = layers.Dropout(p["dropout"])(x)
-        x   = layers.LSTM(p["units_2"], return_sequences=False)(x)
-        x   = layers.Dropout(p["dropout"])(x)
-        x   = layers.Dense(32, activation="relu")(x)
-        out = layers.Dense(1, activation="sigmoid")(x)
-        model = Model(inp, out)
-        model.compile(
-            optimizer=tf.keras.optimizers.Adam(p["learning_rate"]),
-            loss="binary_crossentropy",
-            metrics=["accuracy"],
-            jit_compile=False,   # avoids repeated tf.function retracing on CPU
-        )
-        return model
+        p = self.params
+        u1 = p["units_1"]
+        u2 = p["units_2"]
+        dr = p["dropout"]
+
+        class LSTMNet(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.lstm1 = nn.LSTM(n_features, u1, batch_first=True)
+                self.drop1 = nn.Dropout(dr)
+                self.lstm2 = nn.LSTM(u1, u2, batch_first=True)
+                self.drop2 = nn.Dropout(dr)
+                self.fc1   = nn.Linear(u2, 32)
+                self.relu  = nn.ReLU()
+                self.fc2   = nn.Linear(32, 1)
+                self.sig   = nn.Sigmoid()
+
+            def forward(self, x):
+                out, _ = self.lstm1(x)
+                out    = self.drop1(out)
+                out, _ = self.lstm2(out)
+                out    = self.drop2(out[:, -1, :])   # last timestep
+                out    = self.relu(self.fc1(out))
+                return self.sig(self.fc2(out)).squeeze(1)
+
+        return LSTMNet()
 
     # ── Fit ─────────────────────────────────────────────────────────────────
 
     def fit(self, X_train, y_train, X_val=None, y_val=None):
+        import torch
+        import torch.nn as nn
+        from torch.utils.data import TensorDataset, DataLoader
         from sklearn.preprocessing import StandardScaler
-        import tensorflow as tf
 
-        self.scaler = StandardScaler()
-        X_scaled = self.scaler.fit_transform(X_train)
+        self.scaler  = StandardScaler()
+        X_scaled     = self.scaler.fit_transform(X_train)
+        X_seq        = self._make_sequences(X_scaled)
+        y_seq        = self._align_labels(np.asarray(y_train, dtype=np.float32))
 
-        X_seq = self._make_sequences(X_scaled)
-        y_seq = self._align_labels(np.asarray(y_train))
+        if X_seq is None or len(X_seq) == 0:
+            logger.warning("[LSTM] Not enough data for sequences — skipping")
+            return self
 
-        val_data = None
-        if X_val is not None:
-            Xv = self.scaler.transform(X_val)
-            Xv_seq = self._make_sequences(Xv)
-            yv_seq = self._align_labels(np.asarray(y_val))
-            val_data = (Xv_seq, yv_seq)
+        device = torch.device("cpu")
+        p      = self.params
+        model  = self._build_torch(X_train.shape[1]).to(device)
+        opt    = torch.optim.Adam(model.parameters(), lr=p["learning_rate"])
+        loss_fn = nn.BCELoss()
+        sched  = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, patience=5, factor=0.5)
 
-        self.model = self._build(X_train.shape[1])
-        p = self.params
-        callbacks = [
-            tf.keras.callbacks.EarlyStopping(
-                monitor="val_loss" if val_data else "loss",
-                patience=10, restore_best_weights=True
-            ),
-            tf.keras.callbacks.ReduceLROnPlateau(
-                monitor="val_loss" if val_data else "loss",
-                factor=0.5, patience=5, verbose=0
-            ),
-        ]
-        self.model.fit(
-            X_seq, y_seq,
-            validation_data=val_data,
-            epochs=p["epochs"],
-            batch_size=p["batch_size"],
-            callbacks=callbacks,
-            verbose=0,
+        Xt = torch.tensor(X_seq,  dtype=torch.float32)
+        yt = torch.tensor(y_seq,  dtype=torch.float32)
+        train_loader = DataLoader(
+            TensorDataset(Xt, yt),
+            batch_size=p["batch_size"], shuffle=False
         )
+
+        val_loader = None
+        if X_val is not None and len(X_val) >= self.seq_len:
+            Xv_s   = self.scaler.transform(X_val)
+            Xv_seq = self._make_sequences(Xv_s)
+            yv_seq = self._align_labels(np.asarray(y_val, dtype=np.float32))
+            if Xv_seq is not None and len(Xv_seq) > 0:
+                Xvt = torch.tensor(Xv_seq, dtype=torch.float32)
+                yvt = torch.tensor(yv_seq, dtype=torch.float32)
+                val_loader = DataLoader(TensorDataset(Xvt, yvt), batch_size=64)
+
+        best_val   = float("inf")
+        patience   = 10
+        no_improve = 0
+        best_state = None
+
+        for epoch in range(p["epochs"]):
+            model.train()
+            for xb, yb in train_loader:
+                opt.zero_grad()
+                loss_fn(model(xb), yb).backward()
+                opt.step()
+
+            if val_loader:
+                model.eval()
+                val_loss = 0.0
+                with torch.no_grad():
+                    for xb, yb in val_loader:
+                        val_loss += loss_fn(model(xb), yb).item()
+                val_loss /= len(val_loader)
+                sched.step(val_loss)
+                if val_loss < best_val - 1e-4:
+                    best_val   = val_loss
+                    no_improve = 0
+                    best_state = {k: v.clone() for k, v in model.state_dict().items()}
+                else:
+                    no_improve += 1
+                    if no_improve >= patience:
+                        break
+
+        if best_state:
+            model.load_state_dict(best_state)
+
+        self.model = model
         return self
 
     # ── Predict ─────────────────────────────────────────────────────────────
 
     def predict_proba(self, X) -> np.ndarray:
-        """Returns probabilities aligned to input rows.
-        Rows before seq_len-1 are NaN (no full sequence available).
-        If X has fewer rows than seq_len, returns all-NaN array."""
+        import torch
         all_nan = np.full(len(X), np.nan)
+        if self.model is None or self.scaler is None:
+            return all_nan
         if len(X) < self.seq_len:
             return all_nan
         X_scaled = self.scaler.transform(X)
         X_seq    = self._make_sequences(X_scaled)
         if X_seq is None:
             return all_nan
-        preds = self.model.predict(X_seq, verbose=0).flatten()
-        # Pad front with NaN so length matches input
+        self.model.eval()
+        with torch.no_grad():
+            xt   = torch.tensor(X_seq, dtype=torch.float32)
+            pred = self.model(xt).numpy().flatten()
         pad = np.full(self.seq_len - 1, np.nan)
-        return np.concatenate([pad, preds])
+        return np.concatenate([pad, pred])
 
     # ── Persist ─────────────────────────────────────────────────────────────
 
     def save(self, path: str):
+        import torch
         base = Path(path)
         base.parent.mkdir(parents=True, exist_ok=True)
-        self.model.save(str(base) + ".keras")
+        if self.model is not None:
+            torch.save(self.model.state_dict(), str(base) + "_weights.pt")
         with open(str(base) + "_scaler.pkl", "wb") as f:
             pickle.dump(self.scaler, f)
         with open(str(base) + "_params.pkl", "wb") as f:
-            pickle.dump({"params": self.params, "seq_len": self.seq_len}, f)
+            pickle.dump({"params": self.params, "seq_len": self.seq_len,
+                         "n_features": self.model.lstm1.input_size if self.model else None}, f)
 
     @classmethod
     def load(cls, path: str) -> "LSTMModel":
-        import tensorflow as tf
+        import torch
         base = Path(path)
         with open(str(base) + "_params.pkl", "rb") as f:
             meta = pickle.load(f)
         obj = cls(seq_len=meta["seq_len"], params=meta["params"])
-        obj.model = tf.keras.models.load_model(str(base) + ".keras")
         with open(str(base) + "_scaler.pkl", "rb") as f:
             obj.scaler = pickle.load(f)
+        n_features = meta.get("n_features")
+        if n_features:
+            obj.model = obj._build_torch(n_features)
+            weights_path = str(base) + "_weights.pt"
+            if Path(weights_path).exists():
+                obj.model.load_state_dict(
+                    torch.load(weights_path, map_location="cpu", weights_only=True)
+                )
         return obj
 
 

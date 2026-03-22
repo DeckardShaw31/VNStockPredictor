@@ -20,7 +20,7 @@ import config
 from data_fetcher import fetch_multiple, get_vnindex
 from features import build_features, get_feature_cols
 from models import XGBModel, LGBMModel, LSTMModel, EnsembleModel
-from tuner import tune_xgb, tune_lgbm, tune_lstm, tune_ensemble_weights
+from tuner import tune_xgb, tune_lgbm, tune_lstm, tune_ensemble_weights, _tune_four_model_weights
 
 logger = logging.getLogger("pipeline")
 
@@ -87,15 +87,31 @@ class TrainingPipeline:
 
         # ── Stage 1: Pre-train the Pattern Transformer on full corpus ─────
         logger.info("=== Stage 1: Pattern Transformer Pre-training ===")
-        from transformer_pipeline import TransformerPipeline
-        self._transformer_pipeline = TransformerPipeline(horizon=self.horizon)
+        self._transformer_pipeline = None
         try:
+            import torch
+            logger.info(f"PyTorch {torch.__version__} detected — building Pattern Transformer")
+
+            from transformer_pipeline import TransformerPipeline
+            self._transformer_pipeline = TransformerPipeline(horizon=self.horizon)
             pretrain_auc = self._transformer_pipeline.pretrain(
-                data, tune=False   # set tune=True to run Optuna on architecture
+                data, tune=False
             )
             logger.info(f"Pattern Transformer pre-train AUC: {pretrain_auc:.4f}")
+
+        except ImportError:
+            logger.warning(
+                "PyTorch not found — Pattern Transformer disabled.\n"
+                "  Fix: pip install torch\n"
+                "  The system will continue with XGBoost + LightGBM + LSTM only."
+            )
+            self._transformer_pipeline = None
+
         except Exception as e:
-            logger.error(f"Transformer pre-training failed: {e}", exc_info=True)
+            logger.warning(
+                f"Pattern Transformer pre-training failed: {e}\n"
+                f"  Continuing with XGBoost + LightGBM + LSTM ensemble."
+            )
             self._transformer_pipeline = None
 
         # ── Stage 2: Per-symbol training (XGB + LGBM + LSTM + fine-tune) ─
@@ -139,12 +155,31 @@ class TrainingPipeline:
             except Exception as e:
                 logger.debug(f"Sentiment skipped for {sym}: {e}")
 
-        feat_df = build_features(
-            ohlcv, vnindex,
-            symbol=sym,
-            sentiment_features=sentiment_feat,
-            use_vol_adjusted_labels=True,
-        )
+        # Build features — try extended signature first, fall back to basic
+        try:
+            feat_df = build_features(
+                ohlcv, vnindex,
+                symbol=sym,
+                sentiment_features=sentiment_feat,
+                use_vol_adjusted_labels=True,
+            )
+        except TypeError:
+            # Local features.py has the older signature — call without new kwargs
+            feat_df = build_features(ohlcv, vnindex)
+
+            # Manually apply vol-adjusted labels on top
+            from target_engineering import make_volatility_adjusted_label
+            cap = len(feat_df)
+            for h in [1, 3, 5, 10]:
+                tgt = f"target_dir_{h}d"
+                if cap >= 25:
+                    feat_df[tgt] = make_volatility_adjusted_label(
+                        feat_df["close"] if "close" in feat_df.columns
+                        else ohlcv["close"].reindex(feat_df.index),
+                        horizon=h,
+                        vol_window=min(20, cap // 3),
+                        threshold_multiplier=0.3,
+                    )
         feat_cols = get_feature_cols(feat_df, self.horizon)
         tgt_col   = f"target_dir_{self.horizon}d"
 
@@ -220,27 +255,18 @@ class TrainingPipeline:
         if transformer_pipeline is not None:
             try:
                 transformer_pipeline.finetune_symbol(sym, ohlcv)
-                transformer_val_proba = np.array([
-                    transformer_pipeline.predict(sym, ohlcv.iloc[:i+1])
-                    for i in range(len(ohlcv) - len(X_val) - 1,
-                                   len(ohlcv) - 1)
-                ])
-                # Simpler: just predict on the validation feature set using full ohlcv
-                # The transformer uses raw OHLCV, not the feature matrix
-                val_start_idx = len(ohlcv) - len(X_te) - len(X_val)
-                val_ohlcv_seqs = []
-                for vi in range(len(X_val)):
-                    end = val_start_idx + vi + 1
-                    start = max(0, end - 60)
-                    val_ohlcv_seqs.append(ohlcv.iloc[start:end])
 
                 from price_tokenizer import PriceTokenizer
                 tk = PriceTokenizer()
+                val_start_idx = len(ohlcv) - len(X_te) - len(X_val)
                 tr_val_probs = []
-                for seq_ohlcv in val_ohlcv_seqs:
+
+                for vi in range(len(X_val)):
+                    end   = val_start_idx + vi + 1
+                    start = max(0, end - 60)
+                    seq_ohlcv = ohlcv.iloc[start:end]
                     tokens = tk.encode(seq_ohlcv)
                     if len(tokens) >= 5:
-                        import numpy as np
                         X_seq = np.array([tokens[-min(60, len(tokens)):]], dtype=np.int32)
                         p = transformer_pipeline._finetuned_models.get(sym)
                         if p and p.model:
@@ -250,6 +276,7 @@ class TrainingPipeline:
                             tr_val_probs.append(0.5)
                     else:
                         tr_val_probs.append(0.5)
+
                 transformer_val_proba = np.array(tr_val_probs)
                 logger.info(f"  Transformer val predictions ready: {len(transformer_val_proba)} samples")
             except Exception as e:

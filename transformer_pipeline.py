@@ -204,11 +204,9 @@ class TransformerPipeline:
         X_val, y_val = X[n_tr:n_tr+n_val], y[n_tr:n_tr+n_val]
         X_te, y_te   = X[n_tr+n_val:], y[n_tr+n_val:]
 
-        # Clone pre-trained model for fine-tuning
-        import tensorflow as tf
-
+        # Clone pre-trained model for fine-tuning (PyTorch-based)
         if self._pretrained_model and self._pretrained_model.model is not None:
-            # Copy weights from pre-trained model
+            # Transfer pre-trained weights (PyTorch state_dict)
             ft_model = PatternTransformerModel(
                 seq_len=self.seq_len,
                 params={**self._pretrained_model.params,
@@ -216,15 +214,18 @@ class TransformerPipeline:
                         "batch_size": FINETUNE_BATCH,
                         "learning_rate": 3e-4},   # lower LR for fine-tuning
             )
-            # Build model with same architecture
-            ft_model.fit(X_tr[:1], y_tr[:1])   # initialise weights
+            # Initialise architecture by doing a dummy forward pass
+            ft_model.fit(X_tr[:2], y_tr[:2])
             if ft_model.model is not None:
                 try:
-                    ft_model.model.set_weights(self._pretrained_model.model.get_weights())
+                    import torch
+                    ft_model.model.load_state_dict(
+                        self._pretrained_model.model.state_dict(), strict=False
+                    )
                     logger.info(f"[transformer] {sym}: transferred pre-trained weights")
                 except Exception as e:
                     logger.debug(f"[transformer] Weight transfer skipped: {e}")
-            # Now fine-tune
+            # Fine-tune with lower LR
             ft_model.fit(X_tr, y_tr, X_val, y_val)
         else:
             # Train from scratch for this symbol
