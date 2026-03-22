@@ -1,0 +1,31 @@
+# Vietnam Stock AI — Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# ── Data ──────────────────────────────────────────────────────────────────────
+vnstock>=3.0.0              # Primary Vietnam stock data source
+yfinance>=0.2.36            # Fallback data source
+pandas>=2.0.0
+numpy>=1.24.0
+
+# ── ML ────────────────────────────────────────────────────────────────────────
+scikit-learn>=1.4.0
+xgboost>=2.0.0
+lightgbm>=4.3.0
+tensorflow>=2.15.0          # LSTM (use tensorflow-cpu for CPU-only servers)
+# tensorflow-cpu>=2.15.0    # Uncomment if no GPU
+
+# ── Hyperparameter Tuning ─────────────────────────────────────────────────────
+optuna>=3.6.0
+
+# ── Scheduling ────────────────────────────────────────────────────────────────
+APScheduler>=3.10.0
+pytz>=2024.1
+
+# ── Dashboard ─────────────────────────────────────────────────────────────────
+streamlit>=1.35.0
+plotly>=5.22.0
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+tqdm>=4.66.0
+python-dateutil>=2.9.0
+requests>=2.31.0
