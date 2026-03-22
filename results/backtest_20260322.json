@@ -1,1 +1,15 @@
-{}
+{
+  "HPG": {
+    "symbol": "HPG",
+    "n_predictions": 613,
+    "n_trades": 244,
+    "auc": 0.6403611507421052,
+    "accuracy": 0.6166394779771615,
+    "win_rate": 0.639344262295082,
+    "strategy_return_pct": 30.366463199906903,
+    "buy_hold_return_pct": 8.096828046744564,
+    "sharpe_ratio": 2.6767520371482387,
+    "max_drawdown_pct": -6.014579015480968,
+    "final_capital": 130366463.1999069
+  }
+}

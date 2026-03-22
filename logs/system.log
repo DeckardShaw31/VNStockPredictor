@@ -360,3 +360,70 @@ ValueError: HPA has only 0 usable rows after feature engineering (minimum: 10). 
 2026-03-22 22:21:01,095 | INFO     | apscheduler.scheduler | Added job "Daily retrain + tune" to job store "default"
 2026-03-22 22:21:01,095 | INFO     | apscheduler.scheduler | Added job "Health check" to job store "default"
 2026-03-22 22:21:01,096 | INFO     | apscheduler.scheduler | Scheduler started
+2026-03-22 22:30:57,106 | INFO     | apscheduler.scheduler | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-22 22:30:57,106 | INFO     | apscheduler.scheduler | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-22 22:30:57,107 | INFO     | apscheduler.scheduler | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-22 22:30:57,107 | INFO     | scheduler | Registered jobs:
+2026-03-22 22:30:57,107 | INFO     | scheduler |   [predict_morning] Morning prediction  next_run=calculated at start
+2026-03-22 22:30:57,107 | INFO     | scheduler |   [retrain_daily] Daily retrain + tune  next_run=calculated at start
+2026-03-22 22:30:57,107 | INFO     | scheduler |   [health_check] Health check  next_run=calculated at start
+2026-03-22 22:30:57,107 | INFO     | scheduler | ============================================================
+2026-03-22 22:30:57,108 | INFO     | scheduler | Vietnam Stock AI -- Daily Scheduler STARTED
+2026-03-22 22:30:57,108 | INFO     | scheduler | Symbols  : VNM, VIC, HPG, VCB, FPT, MWG, MSN, TCB, SSI, GAS, PLX, SAB, VHM, HPA, SHS, VGI
+2026-03-22 22:30:57,108 | INFO     | scheduler | Horizon  : 5 days
+2026-03-22 22:30:57,108 | INFO     | scheduler | Timezone : Asia/Ho_Chi_Minh
+2026-03-22 22:30:57,108 | INFO     | scheduler | Press Ctrl+C to stop.
+2026-03-22 22:30:57,108 | INFO     | scheduler | ============================================================
+2026-03-22 22:30:57,109 | INFO     | scheduler | Running initial prediction now...
+2026-03-22 22:30:57,109 | INFO     | scheduler | [PREDICT JOB] Generating predictions | 2026-03-22T22:30:57.109209+07:00
+2026-03-22 22:30:57,168 | INFO     | features | Feature matrix: 738 rows × 108 columns
+2026-03-22 22:31:01,011 | WARNING  | models | LSTM model not found for VNM; using XGB+LGBM only
+2026-03-22 22:31:01,021 | ERROR    | pipeline | Prediction failed for VNM: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:01,067 | INFO     | features | Feature matrix: 737 rows × 108 columns
+2026-03-22 22:31:01,076 | WARNING  | models | LSTM model not found for VIC; using XGB+LGBM only
+2026-03-22 22:31:01,081 | ERROR    | pipeline | Prediction failed for VIC: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:01,132 | INFO     | features | Feature matrix: 738 rows × 108 columns
+2026-03-22 22:31:01,576 | WARNING  | models | LSTM model not found for HPG; using XGB+LGBM only
+2026-03-22 22:31:01,581 | ERROR    | pipeline | Prediction failed for HPG: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:01,630 | INFO     | features | Feature matrix: 738 rows × 108 columns
+2026-03-22 22:31:01,641 | WARNING  | models | LSTM model not found for VCB; using XGB+LGBM only
+2026-03-22 22:31:01,646 | ERROR    | pipeline | Prediction failed for VCB: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:01,691 | INFO     | features | Feature matrix: 738 rows × 108 columns
+2026-03-22 22:31:01,700 | WARNING  | models | LSTM model not found for FPT; using XGB+LGBM only
+2026-03-22 22:31:01,705 | ERROR    | pipeline | Prediction failed for FPT: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:01,753 | INFO     | features | Feature matrix: 738 rows × 108 columns
+2026-03-22 22:31:01,764 | WARNING  | models | LSTM model not found for MWG; using XGB+LGBM only
+2026-03-22 22:31:01,768 | ERROR    | pipeline | Prediction failed for MWG: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:01,818 | INFO     | features | Feature matrix: 738 rows × 108 columns
+2026-03-22 22:31:01,828 | WARNING  | models | LSTM model not found for MSN; using XGB+LGBM only
+2026-03-22 22:31:01,832 | ERROR    | pipeline | Prediction failed for MSN: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:01,878 | INFO     | features | Feature matrix: 735 rows × 108 columns
+2026-03-22 22:31:01,891 | WARNING  | models | LSTM model not found for TCB; using XGB+LGBM only
+2026-03-22 22:31:01,896 | ERROR    | pipeline | Prediction failed for TCB: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:01,943 | INFO     | features | Feature matrix: 738 rows × 108 columns
+2026-03-22 22:31:01,951 | WARNING  | models | LSTM model not found for SSI; using XGB+LGBM only
+2026-03-22 22:31:01,955 | ERROR    | pipeline | Prediction failed for SSI: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:02,001 | INFO     | features | Feature matrix: 738 rows × 108 columns
+2026-03-22 22:31:02,013 | WARNING  | models | LSTM model not found for GAS; using XGB+LGBM only
+2026-03-22 22:31:02,018 | ERROR    | pipeline | Prediction failed for GAS: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:02,065 | INFO     | features | Feature matrix: 738 rows × 108 columns
+2026-03-22 22:31:02,077 | WARNING  | models | LSTM model not found for PLX; using XGB+LGBM only
+2026-03-22 22:31:02,081 | ERROR    | pipeline | Prediction failed for PLX: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:02,146 | INFO     | features | Feature matrix: 758 rows × 108 columns
+2026-03-22 22:31:02,159 | WARNING  | models | LSTM model not found for SAB; using XGB+LGBM only
+2026-03-22 22:31:02,164 | ERROR    | pipeline | Prediction failed for SAB: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:02,212 | INFO     | features | Feature matrix: 718 rows × 108 columns
+2026-03-22 22:31:02,226 | WARNING  | models | LSTM model not found for VHM; using XGB+LGBM only
+2026-03-22 22:31:02,232 | ERROR    | pipeline | Prediction failed for VHM: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:02,233 | ERROR    | pipeline | Prediction failed for HPA: No trained model for HPA. Run --mode train first.
+2026-03-22 22:31:02,286 | INFO     | features | Feature matrix: 758 rows × 108 columns
+2026-03-22 22:31:02,298 | WARNING  | models | LSTM model not found for SHS; using XGB+LGBM only
+2026-03-22 22:31:02,302 | ERROR    | pipeline | Prediction failed for SHS: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:02,384 | INFO     | features | Feature matrix: 758 rows × 108 columns
+2026-03-22 22:31:02,395 | WARNING  | models | LSTM model not found for VGI; using XGB+LGBM only
+2026-03-22 22:31:02,399 | ERROR    | pipeline | Prediction failed for VGI: 'NoneType' object has no attribute 'transform'
+2026-03-22 22:31:02,401 | INFO     | pipeline | Predictions saved to results\predictions_20260322.json
+2026-03-22 22:31:02,402 | INFO     | apscheduler.scheduler | Added job "Morning prediction" to job store "default"
+2026-03-22 22:31:02,402 | INFO     | apscheduler.scheduler | Added job "Daily retrain + tune" to job store "default"
+2026-03-22 22:31:02,402 | INFO     | apscheduler.scheduler | Added job "Health check" to job store "default"
+2026-03-22 22:31:02,402 | INFO     | apscheduler.scheduler | Scheduler started
