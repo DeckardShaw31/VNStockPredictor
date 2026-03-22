@@ -40,7 +40,7 @@ def main():
     parser = argparse.ArgumentParser(description="Vietnam Stock AI Prediction System")
     parser.add_argument(
         "--mode",
-        choices=["train", "predict", "daemon", "dashboard", "backtest"],
+        choices=["train", "predict", "live", "daemon", "dashboard", "backtest"],
         default="dashboard",
         help="Execution mode",
     )
@@ -65,8 +65,21 @@ def main():
 
     elif args.mode == "predict":
         from pipeline import PredictionPipeline
+        from data_fetcher import fetch_multiple, get_vnindex
+        from math_models import build_math_model_features, get_math_signal_votes
+        from trade_signals import generate_signal, format_signal, save_signals
+
         pipeline = PredictionPipeline(symbols=args.symbols, horizon=args.horizon)
-        results = pipeline.run()
+        results  = pipeline.run()
+
+        syms   = list(results.keys())
+        ohlcvs = fetch_multiple(syms)
+        try:
+            vnidx = get_vnindex()
+        except Exception:
+            vnidx = None
+
+        signals = []
         for sym, pred in results.items():
             direction = "[UP]  " if pred["direction"] == 1 else "[DOWN]"
             logger.info(
@@ -74,6 +87,31 @@ def main():
                 f"confidence={pred['confidence']:.1%} | "
                 f"target_price={pred['target_price']:.2f}"
             )
+            if sym in ohlcvs:
+                try:
+                    math_df    = build_math_model_features(
+                        ohlcvs[sym]["high"], ohlcvs[sym]["low"],
+                        ohlcvs[sym]["close"], ohlcvs[sym]["open"]
+                    )
+                    math_votes = get_math_signal_votes(pred["last_close"], math_df)
+                    sig = generate_signal(
+                        symbol=sym, ohlcv=ohlcvs[sym],
+                        ai_confidence=pred["confidence"],
+                        math_df=math_df, math_votes=math_votes,
+                        horizon=args.horizon, model_auc=pred.get("model_auc", 0),
+                    )
+                    signals.append(sig)
+                    logger.info(f"\n{format_signal(sig)}")
+                except Exception as e:
+                    logger.warning(f"Signal generation failed for {sym}: {e}")
+
+        if signals:
+            save_signals(signals)
+
+    elif args.mode == "live":
+        from live_engine import LiveTradingEngine
+        engine = LiveTradingEngine(symbols=args.symbols, horizon=args.horizon)
+        engine.run_until_close()
 
     elif args.mode == "daemon":
         from scheduler import DailyScheduler

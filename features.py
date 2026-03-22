@@ -288,10 +288,32 @@ def add_market_relative(df: pd.DataFrame, vnindex: Optional[pd.DataFrame], cap: 
 def build_features(
     df: pd.DataFrame,
     vnindex: Optional[pd.DataFrame] = None,
+    symbol: Optional[str] = None,
+    intraday_features: Optional[pd.DataFrame] = None,
+    sentiment_features: Optional[pd.DataFrame] = None,
+    use_vol_adjusted_labels: bool = True,
 ) -> pd.DataFrame:
-    df = df.copy()
+    """
+    Build full feature matrix.
 
-    # cap = how many rows we have — all windows clamp to this
+    Args:
+        df:                     OHLCV DataFrame indexed by date
+        vnindex:                VN-Index OHLCV for market-relative features
+        symbol:                 Stock ticker (used for intraday fetch if not provided)
+        intraday_features:      Pre-built intraday feature DataFrame (or None to skip)
+        sentiment_features:     Pre-built sentiment feature DataFrame (or None to skip)
+        use_vol_adjusted_labels: Use volatility-adjusted targets (reduces label noise)
+
+    Returns:
+        DataFrame with all features + target columns
+    """
+    from target_engineering import (
+        make_volatility_adjusted_label,
+        make_risk_adjusted_target,
+        add_regime_features,
+    )
+
+    df = df.copy()
     cap = len(df)
     logger.info(f"  Building features with cap={cap} rows (adaptive windows)")
 
@@ -304,25 +326,84 @@ def build_features(
     df = add_calendar_features(df)
     df = add_market_relative(df, vnindex, cap)
 
-    # Labels
+    # ── Regime features ───────────────────────────────────────────────────
+    df = add_regime_features(df, vnindex)
+
+    # ── Intraday features (merge on date index) ───────────────────────────
+    if intraday_features is not None and not intraday_features.empty:
+        intra = intraday_features.reindex(df.index)
+        for col in intra.columns:
+            df[f"intra_{col}"] = intra[col]
+        n_intra = intra.notna().any(axis=1).sum()
+        logger.info(f"  Intraday features: {len(intra.columns)} cols, {n_intra} non-null rows")
+    elif symbol:
+        # Try to fetch intraday on the fly
+        try:
+            from intraday_fetcher import build_intraday_features
+            intra = build_intraday_features(symbol, df.index)
+            if not intra.empty:
+                for col in intra.columns:
+                    df[f"intra_{col}"] = intra[col]
+                logger.info(f"  Intraday features fetched: {len(intra.columns)} cols")
+        except Exception as e:
+            logger.debug(f"  Intraday fetch skipped: {e}")
+
+    # ── Sentiment features ────────────────────────────────────────────────
+    if sentiment_features is not None and not sentiment_features.empty:
+        sent = sentiment_features.reindex(df.index)
+        for col in sent.columns:
+            df[f"sent_{col}"] = sent[col]
+        logger.info(f"  Sentiment features: {len(sent.columns)} cols")
+
+    # ── Labels ────────────────────────────────────────────────────────────
     for h in [1, 3, 5, 10]:
         fwd_ret = df["close"].pct_change(h).shift(-h)
         df[f"target_ret_{h}d"] = fwd_ret
-        df[f"target_dir_{h}d"] = (fwd_ret > 0).astype(int)
+
+        if use_vol_adjusted_labels and cap >= 25:
+            vol_adj = make_volatility_adjusted_label(
+                df["close"], horizon=h,
+                vol_window=min(20, cap // 3),
+                threshold_multiplier=0.3,
+            )
+            df[f"target_dir_{h}d"] = vol_adj
+        else:
+            df[f"target_dir_{h}d"] = (fwd_ret > 0).astype(int)
+
+        # Risk-adjusted regression target
+        if cap >= 25:
+            df[f"target_sharpe_{h}d"] = make_risk_adjusted_target(
+                df["close"], horizon=h, vol_window=min(20, cap // 3)
+            )
 
     drop_cols = [c for c in ["open", "high", "low", "volume"] if c in df.columns]
     df = df.drop(columns=drop_cols)
-    df = df.dropna()
+
+    # Drop rows where the primary target is NaN
+    # (keep rows where vol-adjusted label is NaN — they'll be filtered per-target)
+    df = df.dropna(subset=["close"])
+    df = df[df.index.notna()]
+
+    # Fill remaining NaN features (intraday/sentiment may have gaps)
+    df = df.ffill(limit=5).bfill(limit=2)
+
+    # Final dropna for truly unrecoverable rows
+    core_cols = [c for c in df.columns if not c.startswith("target_") and not c.startswith("intra_") and not c.startswith("sent_")]
+    df = df.dropna(subset=core_cols)
 
     logger.info(f"  Feature matrix: {df.shape[0]} rows x {df.shape[1]} columns")
     return df
 
 
 def get_feature_cols(df: pd.DataFrame, horizon: int = 5) -> list:
-    exclude = {f"target_ret_{h}d" for h in [1, 3, 5, 10]}
-    exclude |= {f"target_dir_{h}d" for h in [1, 3, 5, 10]}
+    exclude = set()
+    for h in [1, 3, 5, 10]:
+        exclude.add(f"target_ret_{h}d")
+        exclude.add(f"target_dir_{h}d")
+        exclude.add(f"target_sharpe_{h}d")
     exclude.add("close")
     return [c for c in df.columns if c not in exclude]
+
 
 
 

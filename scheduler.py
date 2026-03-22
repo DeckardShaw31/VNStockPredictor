@@ -52,20 +52,59 @@ def retrain_job(symbols=None, horizon=config.PREDICTION_HORIZON):
 
 
 def predict_job(symbols=None, horizon=config.PREDICTION_HORIZON):
-    """Generate predictions for the coming trading session."""
+    """Generate pre-market predictions + trade signals."""
     logger.info(f"[PREDICT JOB] Generating predictions | {datetime.now(VN_TZ).isoformat()}")
     try:
+        from data_fetcher import fetch_multiple, get_vnindex
+        from math_models import build_math_model_features, get_math_signal_votes
+        from trade_signals import generate_signal, format_signal, save_signals
+
         pipeline = PredictionPipeline(symbols=symbols, horizon=horizon)
         results  = pipeline.run()
+        syms     = list(results.keys())
+        ohlcvs   = fetch_multiple(syms)
+        try:
+            vnidx = get_vnindex()
+        except Exception:
+            vnidx = None
+
+        signals = []
         for sym, pred in results.items():
             arrow = "UP  " if pred["direction"] == 1 else "DOWN"
-            logger.info(
-                f"  {sym:6s} {arrow} {pred['return_pct']:+.2f}%  "
-                f"conf={pred['confidence']:.1%}  "
-                f"target={pred['target_price']:.2f}"
-            )
+            logger.info(f"  {sym:6s} {arrow} {pred['return_pct']:+.2f}%  conf={pred['confidence']:.1%}")
+            if sym in ohlcvs:
+                try:
+                    math_df    = build_math_model_features(
+                        ohlcvs[sym]["high"], ohlcvs[sym]["low"],
+                        ohlcvs[sym]["close"], ohlcvs[sym]["open"]
+                    )
+                    math_votes = get_math_signal_votes(pred["last_close"], math_df)
+                    sig = generate_signal(
+                        symbol=sym, ohlcv=ohlcvs[sym],
+                        ai_confidence=pred["confidence"],
+                        math_df=math_df, math_votes=math_votes,
+                        horizon=horizon, model_auc=pred.get("model_auc", 0),
+                    )
+                    signals.append(sig)
+                    logger.info(format_signal(sig))
+                except Exception as e:
+                    logger.warning(f"Signal gen failed for {sym}: {e}")
+        if signals:
+            save_signals(signals)
     except Exception as e:
         logger.error(f"[PREDICT JOB] FAILED: {e}", exc_info=True)
+
+
+def live_trading_job(symbols=None, horizon=config.PREDICTION_HORIZON):
+    """Run the live intraday fine-tuning engine until market close."""
+    logger.info(f"[LIVE JOB] Starting live engine | {datetime.now(VN_TZ).isoformat()}")
+    try:
+        from live_engine import LiveTradingEngine
+        engine = LiveTradingEngine(symbols=symbols, horizon=horizon)
+        engine.run_until_close()   # blocks until 14:45 ICT
+        logger.info("[LIVE JOB] Complete")
+    except Exception as e:
+        logger.error(f"[LIVE JOB] FAILED: {e}", exc_info=True)
 
 
 def health_check_job():
@@ -115,17 +154,27 @@ class DailyScheduler:
             )
 
     def _register_jobs(self):
-        # 1. Pre-market predictions at 09:05 ICT Mon-Fri
+        # 1. Pre-market predictions + trade signals at 08:30 ICT Mon-Fri
         self._add_job(
             predict_job,
-            cron_kwargs={"day_of_week": "mon-fri", "hour": 9, "minute": 5},
+            cron_kwargs={"day_of_week": "mon-fri", "hour": 8, "minute": 30},
             job_id="predict_morning",
-            job_name="Morning prediction",
+            job_name="Pre-market predictions + signals",
             job_kwargs={"symbols": self.symbols, "horizon": self.horizon},
             misfire_grace_time=300,
         )
 
-        # 2. Post-market retrain at 15:00 ICT Mon-Fri
+        # 2. Live intraday engine at 09:05 ICT (runs until 14:45 internally)
+        self._add_job(
+            live_trading_job,
+            cron_kwargs={"day_of_week": "mon-fri", "hour": 9, "minute": 5},
+            job_id="live_trading",
+            job_name="Live intraday fine-tuning",
+            job_kwargs={"symbols": self.symbols, "horizon": self.horizon},
+            misfire_grace_time=300,
+        )
+
+        # 3. Post-market retrain at 15:00 ICT Mon-Fri
         self._add_job(
             retrain_job,
             cron_kwargs={
@@ -139,7 +188,7 @@ class DailyScheduler:
             misfire_grace_time=1800,
         )
 
-        # 3. Hourly health check
+        # 4. Hourly health check
         self._add_job(
             health_check_job,
             cron_kwargs={"minute": 0},

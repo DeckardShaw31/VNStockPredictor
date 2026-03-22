@@ -100,44 +100,73 @@ class TrainingPipeline:
 
     def _train_symbol(self, sym: str, ohlcv: pd.DataFrame, vnindex) -> dict:
         logger.info(f"--- {sym} -----------------------------------")
-        feat_df   = build_features(ohlcv, vnindex)
+
+        # ── Optional: sentiment features via Claude LLM ────────────────────
+        sentiment_feat = None
+        import os
+        if os.environ.get("ANTHROPIC_API_KEY"):
+            try:
+                from sentiment import load_or_build_sentiment
+                dummy_index = pd.DatetimeIndex([])
+                sent_map = load_or_build_sentiment(
+                    [sym], dummy_index, api_key=os.environ["ANTHROPIC_API_KEY"]
+                )
+                sentiment_feat = sent_map.get(sym)
+            except Exception as e:
+                logger.debug(f"Sentiment skipped for {sym}: {e}")
+
+        feat_df = build_features(
+            ohlcv, vnindex,
+            symbol=sym,
+            sentiment_features=sentiment_feat,
+            use_vol_adjusted_labels=True,
+        )
         feat_cols = get_feature_cols(feat_df, self.horizon)
         tgt_col   = f"target_dir_{self.horizon}d"
 
         # ── Minimum data guard ─────────────────────────────────────────────
-        # Very new stocks (e.g. HPA) may have only ~10 rows after feature
-        # engineering. We allow training on them with tiny splits.
         MIN_ROWS = 10
         if len(feat_df) < MIN_ROWS:
             raise ValueError(
-                f"{sym} has only {len(feat_df)} usable rows after feature "
-                f"engineering (minimum: {MIN_ROWS}). The stock may have just "
-                "listed — try again after a few more trading days."
+                f"{sym} has only {len(feat_df)} usable rows (minimum: {MIN_ROWS})."
             )
 
         if tgt_col not in feat_df.columns:
             raise KeyError(f"Target column {tgt_col} missing")
 
-        X = feat_df[feat_cols].values
-        y = feat_df[tgt_col].values
+        # ── Vol-adjusted labels may have NaN in dead zone — drop those rows ─
+        feat_df_clean = feat_df.dropna(subset=[tgt_col])
+        if len(feat_df_clean) < MIN_ROWS:
+            logger.warning(
+                f"{sym}: only {len(feat_df_clean)} clean-label rows after vol-adjustment. "
+                "Falling back to simple binary labels."
+            )
+            fwd_ret = ohlcv["close"].pct_change(self.horizon).shift(-self.horizon)
+            feat_df[tgt_col] = (fwd_ret > 0).astype(int).reindex(feat_df.index)
+            feat_df_clean = feat_df.dropna(subset=[tgt_col])
+        feat_df = feat_df_clean
 
         train_df, val_df, test_df = _time_split(feat_df)
-        X_tr = train_df[feat_cols].values;  y_tr = train_df[tgt_col].values
-        X_val= val_df[feat_cols].values;    y_val= val_df[tgt_col].values
-        X_te = test_df[feat_cols].values;   y_te = test_df[tgt_col].values
+        X_tr = train_df[feat_cols].values;  y_tr = train_df[tgt_col].values.astype(int)
+        X_val= val_df[feat_cols].values;    y_val= val_df[tgt_col].values.astype(int)
+        X_te = test_df[feat_cols].values;   y_te = test_df[tgt_col].values.astype(int)
 
-        # Secondary guard: splits must be non-empty and have both classes
         for split_name, X_s, y_s in [("train", X_tr, y_tr), ("val", X_val, y_val), ("test", X_te, y_te)]:
             if len(X_s) == 0:
-                raise ValueError(f"{sym}: {split_name} split is empty after time-split.")
+                raise ValueError(f"{sym}: {split_name} split is empty.")
             if len(set(y_s)) < 2:
-                logger.warning(
-                    f"{sym}: {split_name} split has only one class {set(y_s)} "
-                    f"({len(y_s)} rows) — too few data points for reliable evaluation. "
-                    "Model will still be trained but AUC may be unreliable."
-                )
+                logger.warning(f"{sym}: {split_name} has only one class — AUC may be unreliable.")
 
         logger.info(f"  Splits: train={len(X_tr)}, val={len(X_val)}, test={len(X_te)}")
+
+        # ── Feature selection: keep top-40 most predictive features ────────
+        from target_engineering import select_top_features
+        if len(feat_cols) > 40 and len(X_tr) >= 50:
+            feat_cols = select_top_features(X_tr, y_tr, feat_cols, top_n=40)
+            feat_idx  = [get_feature_cols(feat_df, self.horizon).index(f) for f in feat_cols]
+            X_tr  = X_tr[:, feat_idx]
+            X_val = X_val[:, feat_idx]
+            X_te  = X_te[:, feat_idx]
 
         # ── Tune or use defaults ───────────────────────────────────────────
         if self.tune:
