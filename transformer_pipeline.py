@@ -82,9 +82,11 @@ class TransformerPipeline:
         Pre-train transformer on the full multi-symbol corpus.
         Returns validation AUC.
         """
-        # Try loading existing pre-trained model
-        if not force_rebuild and PRETRAINED_MODEL_PATH.with_suffix(".keras").exists():
-            logger.info("[transformer] Loading existing pre-trained model...")
+        # Try loading existing pre-trained model (PyTorch saves as _weights.pt)
+        pretrained_weights = Path(str(PRETRAINED_MODEL_PATH) + "_weights.pt")
+        pretrained_config  = Path(str(PRETRAINED_MODEL_PATH) + "_config.pkl")
+        if not force_rebuild and pretrained_weights.exists() and pretrained_config.exists():
+            logger.info("[transformer] Loading existing pre-trained model (skipping re-train)...")
             try:
                 self._pretrained_model = PatternTransformerModel.load(
                     str(PRETRAINED_MODEL_PATH)
@@ -96,13 +98,29 @@ class TransformerPipeline:
 
         logger.info("[transformer] === Stage 1: Pre-training on full market corpus ===")
 
-        # Build corpus
-        X, y, weights = build_corpus(data, seq_len=self.seq_len, horizon=self.horizon)
-        if len(X) == 0:
-            logger.error("[transformer] Empty corpus — cannot pre-train")
-            return 0.0
+        # Build corpus — reuse cached version if it exists and is recent
+        from pattern_dataset import CORPUS_CACHE
+        corpus_loaded = False
+        if CORPUS_CACHE.exists() and not force_rebuild:
+            cache_age_h = (
+                datetime.now() - datetime.fromtimestamp(CORPUS_CACHE.stat().st_mtime)
+            ).total_seconds() / 3600
+            if cache_age_h < 23:   # less than 23h old — safe to reuse
+                cached = load_corpus()
+                if cached is not None:
+                    X, y, weights = cached
+                    logger.info(
+                        f"[transformer] Reusing cached corpus "
+                        f"({len(X)} sequences, {cache_age_h:.1f}h old)"
+                    )
+                    corpus_loaded = True
 
-        save_corpus(X, y, weights)
+        if not corpus_loaded:
+            X, y, weights = build_corpus(data, seq_len=self.seq_len, horizon=self.horizon)
+            if len(X) == 0:
+                logger.error("[transformer] Empty corpus — cannot pre-train")
+                return 0.0
+            save_corpus(X, y, weights)
 
         # Time-split
         splits = time_split_corpus(X, y, weights)

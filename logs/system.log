@@ -2278,3 +2278,940 @@ ValueError: HPA has only 0 usable rows (minimum: 10).
   Basis      : Models: ichimoku, supertrend, psar, don_pct | ATR14=6 | SL=1.5xATR TP=3.0xATR
   Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': 1, 'don_pct': -1, 'squeeze': -1, 'pivot': -1}
 2026-03-23 17:09:29,006 | INFO     | trade_signals | Signals saved to results\signals_20260323.json
+2026-03-23 17:22:49,419 | INFO     | pipeline | === Training Pipeline | horizon=5d | 16 symbols ===
+2026-03-23 17:22:49,426 | INFO     | pipeline | === Stage 1: Pattern Transformer Pre-training ===
+2026-03-23 17:22:51,143 | INFO     | pipeline | PyTorch 2.10.0+cpu detected — building Pattern Transformer
+2026-03-23 17:22:51,145 | INFO     | transformer_pipeline | [transformer] === Stage 1: Pre-training on full market corpus ===
+2026-03-23 17:22:51,177 | INFO     | pattern_dataset | [corpus] VNM: 3079 sequences  up=50.5%  down=49.5%
+2026-03-23 17:22:51,208 | INFO     | pattern_dataset | [corpus] VIC: 3072 sequences  up=50.7%  down=49.3%
+2026-03-23 17:22:51,238 | INFO     | pattern_dataset | [corpus] HPG: 3131 sequences  up=55.9%  down=44.1%
+2026-03-23 17:22:51,269 | INFO     | pattern_dataset | [corpus] VCB: 3085 sequences  up=52.6%  down=47.4%
+2026-03-23 17:22:51,300 | INFO     | pattern_dataset | [corpus] FPT: 3145 sequences  up=56.5%  down=43.5%
+2026-03-23 17:22:51,325 | INFO     | pattern_dataset | [corpus] MWG: 2540 sequences  up=55.4%  down=44.6%
+2026-03-23 17:22:51,356 | INFO     | pattern_dataset | [corpus] MSN: 3088 sequences  up=48.4%  down=51.6%
+2026-03-23 17:22:51,372 | INFO     | pattern_dataset | [corpus] TCB: 1686 sequences  up=53.8%  down=46.2%
+2026-03-23 17:22:51,404 | INFO     | pattern_dataset | [corpus] SSI: 3152 sequences  up=55.2%  down=44.8%
+2026-03-23 17:22:51,433 | INFO     | pattern_dataset | [corpus] GAS: 2976 sequences  up=52.9%  down=47.1%
+2026-03-23 17:22:51,452 | INFO     | pattern_dataset | [corpus] PLX: 1876 sequences  up=50.9%  down=49.1%
+2026-03-23 17:22:51,471 | INFO     | pattern_dataset | [corpus] SAB: 1977 sequences  up=45.9%  down=54.1%
+2026-03-23 17:22:51,497 | INFO     | pattern_dataset | [corpus] VHM: 1875 sequences  up=47.8%  down=52.2%
+2026-03-23 17:22:51,497 | WARNING  | pattern_dataset | [corpus] HPA: too short (27 rows), skipping
+2026-03-23 17:22:51,527 | INFO     | pattern_dataset | [corpus] SHS: 3127 sequences  up=51.9%  down=48.1%
+2026-03-23 17:22:51,543 | INFO     | pattern_dataset | [corpus] VGI: 1574 sequences  up=52.9%  down=47.1%
+2026-03-23 17:22:51,557 | INFO     | pattern_dataset | [corpus] Total: 37570 sequences across 16 symbols  up=50.0%
+2026-03-23 17:22:51,566 | INFO     | pattern_dataset | [corpus] Saved to data\cache\pattern_corpus.pkl
+2026-03-23 17:22:51,566 | INFO     | transformer_pipeline | [transformer] Corpus split: train=26300, val=5635, test=5635
+2026-03-23 17:24:47,625 | INFO     | pipeline | === Training Pipeline | horizon=5d | 16 symbols ===
+2026-03-23 17:24:47,630 | INFO     | pipeline | === Stage 1: Pattern Transformer Pre-training ===
+2026-03-23 17:24:49,008 | INFO     | pipeline | PyTorch 2.10.0+cpu detected — building Pattern Transformer
+2026-03-23 17:24:49,052 | INFO     | transformer_pipeline | [transformer] Loading existing pre-trained model (skipping re-train)...
+2026-03-23 17:24:49,142 | INFO     | pipeline | Pattern Transformer pre-train AUC: 0.5544
+2026-03-23 17:24:49,142 | INFO     | pipeline | === Stage 2: Per-symbol training ===
+2026-03-23 17:24:49,142 | INFO     | pipeline | --- VNM -----------------------------------
+2026-03-23 17:24:49,219 | INFO     | features | Feature matrix: 3336 rows × 108 columns
+2026-03-23 17:24:49,222 | INFO     | target_engineering |   Vol-adjusted labels: 69.1% of rows kept (threshold=0.3x daily vol, dropped 30.9% near-zero moves)
+2026-03-23 17:24:49,223 | INFO     | target_engineering |   Vol-adjusted labels: 82.2% of rows kept (threshold=0.3x daily vol, dropped 17.8% near-zero moves)
+2026-03-23 17:24:49,224 | INFO     | target_engineering |   Vol-adjusted labels: 85.8% of rows kept (threshold=0.3x daily vol, dropped 14.2% near-zero moves)
+2026-03-23 17:24:49,226 | INFO     | target_engineering |   Vol-adjusted labels: 90.1% of rows kept (threshold=0.3x daily vol, dropped 9.9% near-zero moves)
+2026-03-23 17:24:49,232 | INFO     | pipeline |   Splits: train=2004, val=429, test=429
+2026-03-23 17:24:49,581 | INFO     | target_engineering |   Feature selection: kept 40/99 features (dropped 59 low-importance)
+2026-03-23 17:24:49,583 | INFO     | tuner | Tuning XGBoost (600 trials)...
+2026-03-23 17:27:48,595 | INFO     | tuner | XGB best AUC: 0.5916  params={'n_estimators': 587, 'max_depth': 8, 'learning_rate': 0.2808999689680502, 'subsample': 0.6595703806045905, 'colsample_bytree': 0.7891335990747961, 'min_child_weight': 2, 'gamma': 0.6257933156413475, 'reg_alpha': 0.6696451688602988, 'reg_lambda': 1.0508178551216307, 'eval_metric': 'logloss', 'random_state': 42, 'n_jobs': -1}
+2026-03-23 17:27:48,597 | INFO     | tuner | Tuning LightGBM (600 trials)...
+2026-03-23 17:28:31,898 | INFO     | tuner | LGBM best AUC: 0.6374  params={'n_estimators': 518, 'num_leaves': 97, 'learning_rate': 0.0175134252358321, 'feature_fraction': 0.6193842813516451, 'bagging_fraction': 0.7166805537710819, 'bagging_freq': 1, 'min_child_samples': 33, 'reg_alpha': 1.3631558583517063, 'reg_lambda': 1.8324133990647098, 'random_state': 42, 'n_jobs': -1, 'verbose': -1}
+2026-03-23 17:28:31,900 | INFO     | tuner | Tuning LSTM (100 trials)...
+2026-03-23 18:10:24,181 | INFO     | updater | === Incremental Update | 2026-03-23 18:10 ===
+2026-03-23 18:10:24,182 | INFO     | updater | Symbols: VNM, VIC, HPG, VCB, FPT, MWG, MSN, TCB, SSI, GAS, PLX, SAB, VHM, HPA, SHS, VGI, GEX | Horizon: 5d
+2026-03-23 18:10:24,182 | INFO     | updater | Using saved hyperparameters — no Optuna (fast update)
+2026-03-23 18:10:29,059 | INFO     | data_fetcher | [vnstock] VNM: 3609 rows fetched
+2026-03-23 18:10:31,134 | INFO     | data_fetcher | [vnstock] VIC: 3609 rows fetched
+2026-03-23 18:10:33,195 | INFO     | data_fetcher | [vnstock] HPG: 3609 rows fetched
+2026-03-23 18:10:36,191 | INFO     | data_fetcher | [vnstock] VCB: 3609 rows fetched
+2026-03-23 18:10:39,406 | INFO     | data_fetcher | [vnstock] FPT: 3609 rows fetched
+2026-03-23 18:10:42,579 | INFO     | data_fetcher | [vnstock] MWG: 2920 rows fetched
+2026-03-23 18:10:45,792 | INFO     | data_fetcher | [vnstock] MSN: 3609 rows fetched
+2026-03-23 18:10:49,118 | INFO     | data_fetcher | [vnstock] TCB: 1949 rows fetched
+2026-03-23 18:10:52,212 | INFO     | data_fetcher | [vnstock] SSI: 3609 rows fetched
+2026-03-23 18:10:55,314 | INFO     | data_fetcher | [vnstock] GAS: 3455 rows fetched
+2026-03-23 18:10:57,607 | INFO     | data_fetcher | [vnstock] PLX: 2228 rows fetched
+2026-03-23 18:10:59,469 | INFO     | data_fetcher | [vnstock] SAB: 2319 rows fetched
+2026-03-23 18:11:01,232 | INFO     | data_fetcher | [vnstock] VHM: 3373 rows fetched
+2026-03-23 18:11:03,026 | INFO     | data_fetcher | [vnstock] HPA: 27 rows fetched
+2026-03-23 18:11:03,027 | WARNING  | data_fetcher | HPA: only 27 rows available. This symbol may be too new or illiquid — consider removing it from your watchlist.
+2026-03-23 18:11:05,014 | INFO     | data_fetcher | [vnstock] SHS: 3609 rows fetched
+2026-03-23 18:11:06,648 | INFO     | data_fetcher | [vnstock] VGI: 1869 rows fetched
+2026-03-23 18:11:08,735 | INFO     | data_fetcher | [vnstock] GEX: 2597 rows fetched
+2026-03-23 18:11:08,738 | INFO     | updater |   Updating VNM...
+2026-03-23 18:11:08,893 | INFO     | features | Feature matrix: 3336 rows × 108 columns
+2026-03-23 18:11:08,898 | INFO     | updater |     Data: total=3336, train=2836, val=500
+2026-03-23 18:11:11,286 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:11:12,730 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:11:12,815 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:11:21,845 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:11:21,847 | INFO     | transformer_pipeline | [transformer] Fine-tuning on VNM...
+2026-03-23 18:11:21,938 | INFO     | updater |     Post-update validation: AUC=0.6131  Acc=0.5520
+2026-03-23 18:11:21,973 | INFO     | models | Saved ensemble for VNM h=5
+2026-03-23 18:11:21,977 | INFO     | updater |   VNM: updated | new_rows=3336 | total_rows=3336 | val_auc=0.6131
+2026-03-23 18:11:21,978 | INFO     | updater |   Updating VIC...
+2026-03-23 18:11:22,108 | INFO     | features | Feature matrix: 3336 rows × 108 columns
+2026-03-23 18:11:22,111 | INFO     | updater |     Data: total=3336, train=2836, val=500
+2026-03-23 18:11:22,118 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:11:22,507 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:11:22,628 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:11:29,706 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:11:29,707 | INFO     | transformer_pipeline | [transformer] Fine-tuning on VIC...
+2026-03-23 18:11:29,789 | INFO     | updater |     Post-update validation: AUC=0.4098  Acc=0.4380
+2026-03-23 18:11:29,798 | INFO     | models | Saved ensemble for VIC h=5
+2026-03-23 18:11:29,799 | INFO     | updater |   VIC: updated | new_rows=3336 | total_rows=3336 | val_auc=0.4098
+2026-03-23 18:11:29,800 | INFO     | updater |   Updating HPG...
+2026-03-23 18:11:29,901 | INFO     | features | Feature matrix: 3288 rows × 108 columns
+2026-03-23 18:11:29,903 | INFO     | updater |     Data: total=3288, train=2795, val=493
+2026-03-23 18:11:29,912 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:11:30,377 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:11:30,451 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:11:39,032 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:11:39,033 | INFO     | transformer_pipeline | [transformer] Fine-tuning on HPG...
+2026-03-23 18:11:39,118 | INFO     | updater |     Post-update validation: AUC=0.5056  Acc=0.5172
+2026-03-23 18:11:39,146 | INFO     | models | Saved ensemble for HPG h=5
+2026-03-23 18:11:39,149 | INFO     | updater |   HPG: updated | new_rows=3288 | total_rows=3288 | val_auc=0.5056
+2026-03-23 18:11:39,150 | INFO     | updater |   Updating VCB...
+2026-03-23 18:11:39,254 | INFO     | features | Feature matrix: 3359 rows × 108 columns
+2026-03-23 18:11:39,258 | INFO     | updater |     Data: total=3359, train=2856, val=503
+2026-03-23 18:11:39,304 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:11:39,926 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:11:40,280 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:11:53,151 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:11:53,152 | INFO     | transformer_pipeline | [transformer] Fine-tuning on VCB...
+2026-03-23 18:11:53,258 | INFO     | updater |     Post-update validation: AUC=0.5470  Acc=0.5249
+2026-03-23 18:11:53,267 | INFO     | models | Saved ensemble for VCB h=5
+2026-03-23 18:11:53,269 | INFO     | updater |   VCB: updated | new_rows=3359 | total_rows=3359 | val_auc=0.5470
+2026-03-23 18:11:53,270 | INFO     | updater |   Updating FPT...
+2026-03-23 18:11:53,372 | INFO     | features | Feature matrix: 3358 rows × 108 columns
+2026-03-23 18:11:53,375 | INFO     | updater |     Data: total=3358, train=2855, val=503
+2026-03-23 18:11:53,382 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:11:53,498 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:11:53,775 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:12:18,786 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:12:18,787 | INFO     | transformer_pipeline | [transformer] Fine-tuning on FPT...
+2026-03-23 18:12:18,884 | INFO     | updater |     Post-update validation: AUC=0.5005  Acc=0.4791
+2026-03-23 18:12:18,891 | INFO     | models | Saved ensemble for FPT h=5
+2026-03-23 18:12:18,892 | INFO     | updater |   FPT: updated | new_rows=3358 | total_rows=3358 | val_auc=0.5005
+2026-03-23 18:12:18,893 | INFO     | updater |   Updating MWG...
+2026-03-23 18:12:18,981 | INFO     | features | Feature matrix: 2625 rows × 108 columns
+2026-03-23 18:12:18,983 | INFO     | updater |     Data: total=2625, train=2232, val=393
+2026-03-23 18:12:18,992 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:12:19,344 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:12:19,468 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:12:24,014 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:12:24,015 | INFO     | transformer_pipeline | [transformer] Fine-tuning on MWG...
+2026-03-23 18:12:24,078 | INFO     | updater |     Post-update validation: AUC=0.5401  Acc=0.5369
+2026-03-23 18:12:24,086 | INFO     | models | Saved ensemble for MWG h=5
+2026-03-23 18:12:24,088 | INFO     | updater |   MWG: updated | new_rows=2625 | total_rows=2625 | val_auc=0.5401
+2026-03-23 18:12:24,089 | INFO     | updater |   Updating MSN...
+2026-03-23 18:12:24,188 | INFO     | features | Feature matrix: 3319 rows × 108 columns
+2026-03-23 18:12:24,191 | INFO     | updater |     Data: total=3319, train=2822, val=497
+2026-03-23 18:12:24,202 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:12:24,572 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:12:24,672 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:12:32,003 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:12:32,003 | INFO     | transformer_pipeline | [transformer] Fine-tuning on MSN...
+2026-03-23 18:12:32,087 | INFO     | updater |     Post-update validation: AUC=0.5434  Acc=0.5191
+2026-03-23 18:12:32,097 | INFO     | models | Saved ensemble for MSN h=5
+2026-03-23 18:12:32,099 | INFO     | updater |   MSN: updated | new_rows=3319 | total_rows=3319 | val_auc=0.5434
+2026-03-23 18:12:32,099 | INFO     | updater |   Updating TCB...
+2026-03-23 18:12:32,180 | INFO     | features | Feature matrix: 1717 rows × 108 columns
+2026-03-23 18:12:32,182 | INFO     | updater |     Data: total=1717, train=1460, val=257
+2026-03-23 18:12:32,191 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:12:32,679 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:12:32,775 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:12:36,438 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:12:36,439 | INFO     | transformer_pipeline | [transformer] Fine-tuning on TCB...
+2026-03-23 18:12:36,487 | INFO     | updater |     Post-update validation: AUC=0.5287  Acc=0.5097
+2026-03-23 18:12:36,496 | INFO     | models | Saved ensemble for TCB h=5
+2026-03-23 18:12:36,498 | INFO     | updater |   TCB: updated | new_rows=1717 | total_rows=1717 | val_auc=0.5287
+2026-03-23 18:12:36,498 | INFO     | updater |   Updating SSI...
+2026-03-23 18:12:36,600 | INFO     | features | Feature matrix: 3359 rows × 108 columns
+2026-03-23 18:12:36,603 | INFO     | updater |     Data: total=3359, train=2856, val=503
+2026-03-23 18:12:36,610 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:12:36,697 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:12:36,785 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:12:41,551 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:12:41,552 | INFO     | transformer_pipeline | [transformer] Fine-tuning on SSI...
+2026-03-23 18:12:41,632 | INFO     | updater |     Post-update validation: AUC=0.5954  Acc=0.5368
+2026-03-23 18:12:41,638 | INFO     | models | Saved ensemble for SSI h=5
+2026-03-23 18:12:41,640 | INFO     | updater |   SSI: updated | new_rows=3359 | total_rows=3359 | val_auc=0.5954
+2026-03-23 18:12:41,640 | INFO     | updater |   Updating GAS...
+2026-03-23 18:12:41,741 | INFO     | features | Feature matrix: 3165 rows × 108 columns
+2026-03-23 18:12:41,743 | INFO     | updater |     Data: total=3165, train=2691, val=474
+2026-03-23 18:12:41,752 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:12:41,897 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:12:42,179 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:13:09,611 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:13:09,611 | INFO     | transformer_pipeline | [transformer] Fine-tuning on GAS...
+2026-03-23 18:13:09,697 | INFO     | updater |     Post-update validation: AUC=0.4978  Acc=0.5148
+2026-03-23 18:13:09,704 | INFO     | models | Saved ensemble for GAS h=5
+2026-03-23 18:13:09,705 | INFO     | updater |   GAS: updated | new_rows=3165 | total_rows=3165 | val_auc=0.4978
+2026-03-23 18:13:09,706 | INFO     | updater |   Updating PLX...
+2026-03-23 18:13:09,790 | INFO     | features | Feature matrix: 1984 rows × 108 columns
+2026-03-23 18:13:09,792 | INFO     | updater |     Data: total=1984, train=1687, val=297
+2026-03-23 18:13:09,800 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:13:10,081 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:13:10,196 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:13:25,436 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:13:25,436 | INFO     | transformer_pipeline | [transformer] Fine-tuning on PLX...
+2026-03-23 18:13:25,504 | INFO     | updater |     Post-update validation: AUC=0.4901  Acc=0.5387
+2026-03-23 18:13:25,513 | INFO     | models | Saved ensemble for PLX h=5
+2026-03-23 18:13:25,515 | INFO     | updater |   PLX: updated | new_rows=1984 | total_rows=1984 | val_auc=0.4901
+2026-03-23 18:13:25,515 | INFO     | updater |   Updating SAB...
+2026-03-23 18:13:25,595 | INFO     | features | Feature matrix: 2069 rows × 108 columns
+2026-03-23 18:13:25,597 | INFO     | updater |     Data: total=2069, train=1759, val=310
+2026-03-23 18:13:25,603 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:13:25,807 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:13:25,931 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:13:30,700 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:13:30,701 | INFO     | transformer_pipeline | [transformer] Fine-tuning on SAB...
+2026-03-23 18:13:30,771 | INFO     | updater |     Post-update validation: AUC=0.5574  Acc=0.5839
+2026-03-23 18:13:30,777 | INFO     | models | Saved ensemble for SAB h=5
+2026-03-23 18:13:30,779 | INFO     | updater |   SAB: updated | new_rows=2069 | total_rows=2069 | val_auc=0.5574
+2026-03-23 18:13:30,779 | INFO     | updater |   Updating VHM...
+2026-03-23 18:13:30,887 | INFO     | features | Feature matrix: 1888 rows × 108 columns
+2026-03-23 18:13:30,888 | INFO     | updater |     Data: total=1888, train=1605, val=283
+2026-03-23 18:13:30,899 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:13:31,229 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:13:31,423 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:13:35,745 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:13:35,746 | INFO     | transformer_pipeline | [transformer] Fine-tuning on VHM...
+2026-03-23 18:13:35,818 | INFO     | updater |     Post-update validation: AUC=0.5421  Acc=0.4523
+2026-03-23 18:13:35,828 | INFO     | models | Saved ensemble for VHM h=5
+2026-03-23 18:13:35,829 | INFO     | updater |   VHM: updated | new_rows=1888 | total_rows=1888 | val_auc=0.5421
+2026-03-23 18:13:35,830 | WARNING  | updater |   HPA: no trained model found — run --mode train first
+2026-03-23 18:13:35,830 | INFO     | updater |   Updating SHS...
+2026-03-23 18:13:35,941 | INFO     | features | Feature matrix: 3339 rows × 108 columns
+2026-03-23 18:13:35,944 | INFO     | updater |     Data: total=3339, train=2839, val=500
+2026-03-23 18:13:35,966 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:13:37,136 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:13:37,471 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:13:49,645 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:13:49,645 | INFO     | transformer_pipeline | [transformer] Fine-tuning on SHS...
+2026-03-23 18:13:49,717 | INFO     | updater |     Post-update validation: AUC=0.5457  Acc=0.5320
+2026-03-23 18:13:49,735 | INFO     | models | Saved ensemble for SHS h=5
+2026-03-23 18:13:49,738 | INFO     | updater |   SHS: updated | new_rows=3339 | total_rows=3339 | val_auc=0.5457
+2026-03-23 18:13:49,739 | INFO     | updater |   Updating VGI...
+2026-03-23 18:13:49,826 | INFO     | features | Feature matrix: 1660 rows × 108 columns
+2026-03-23 18:13:49,829 | INFO     | updater |     Data: total=1660, train=1411, val=249
+2026-03-23 18:13:49,836 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:13:49,931 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:13:50,166 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:13:53,223 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:13:53,224 | INFO     | transformer_pipeline | [transformer] Fine-tuning on VGI...
+2026-03-23 18:13:53,260 | INFO     | updater |     Post-update validation: AUC=0.6188  Acc=0.5944
+2026-03-23 18:13:53,267 | INFO     | models | Saved ensemble for VGI h=5
+2026-03-23 18:13:53,269 | INFO     | updater |   VGI: updated | new_rows=1660 | total_rows=1660 | val_auc=0.6188
+2026-03-23 18:13:53,269 | WARNING  | updater |   GEX: no trained model found — run --mode train first
+2026-03-23 18:13:53,270 | INFO     | updater | Update summary saved to results\update_summary_20260323_1813.json
+2026-03-23 18:13:53,271 | INFO     | main | Update complete: 15 symbols updated, 0 failed
+2026-03-23 18:15:47,748 | INFO     | updater | === Incremental Update | 2026-03-23 18:15 ===
+2026-03-23 18:15:47,749 | INFO     | updater | Symbols: VNM, VIC, HPG, VCB, FPT, MWG, MSN, SSI, GAS, PLX, SAB, VHM, HPA, SHS, VGI, GEX, MSB | Horizon: 5d
+2026-03-23 18:15:47,749 | INFO     | updater | Using saved hyperparameters — no Optuna (fast update)
+2026-03-23 18:15:51,978 | INFO     | data_fetcher | [vnstock] VNM: 3609 rows fetched
+2026-03-23 18:15:53,483 | INFO     | data_fetcher | [vnstock] VIC: 3609 rows fetched
+2026-03-23 18:15:54,900 | INFO     | data_fetcher | [vnstock] HPG: 3609 rows fetched
+2026-03-23 18:15:56,309 | INFO     | data_fetcher | [vnstock] VCB: 3609 rows fetched
+2026-03-23 18:15:57,692 | INFO     | data_fetcher | [vnstock] FPT: 3609 rows fetched
+2026-03-23 18:15:59,054 | INFO     | data_fetcher | [vnstock] MWG: 2920 rows fetched
+2026-03-23 18:16:00,437 | INFO     | data_fetcher | [vnstock] MSN: 3609 rows fetched
+2026-03-23 18:16:01,850 | INFO     | data_fetcher | [vnstock] SSI: 3609 rows fetched
+2026-03-23 18:16:03,703 | INFO     | data_fetcher | [vnstock] GAS: 3455 rows fetched
+2026-03-23 18:16:05,961 | INFO     | data_fetcher | [vnstock] PLX: 2228 rows fetched
+2026-03-23 18:16:08,271 | INFO     | data_fetcher | [vnstock] SAB: 2319 rows fetched
+2026-03-23 18:16:10,496 | INFO     | data_fetcher | [vnstock] VHM: 3373 rows fetched
+2026-03-23 18:16:12,368 | INFO     | data_fetcher | [vnstock] HPA: 27 rows fetched
+2026-03-23 18:16:12,368 | WARNING  | data_fetcher | HPA: only 27 rows available. This symbol may be too new or illiquid — consider removing it from your watchlist.
+2026-03-23 18:16:14,642 | INFO     | data_fetcher | [vnstock] SHS: 3609 rows fetched
+2026-03-23 18:16:16,779 | INFO     | data_fetcher | [vnstock] VGI: 1869 rows fetched
+2026-03-23 18:16:18,914 | INFO     | data_fetcher | [vnstock] GEX: 2597 rows fetched
+2026-03-23 18:16:21,976 | INFO     | data_fetcher | [vnstock] MSB: 1305 rows fetched
+2026-03-23 18:16:21,979 | INFO     | updater |   Updating VNM...
+2026-03-23 18:16:22,133 | INFO     | features | Feature matrix: 3336 rows × 108 columns
+2026-03-23 18:16:22,136 | INFO     | updater |     Data: total=3336, train=2836, val=500
+2026-03-23 18:16:24,483 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:16:25,881 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:16:25,957 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:16:36,926 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:16:36,928 | INFO     | transformer_pipeline | [transformer] Fine-tuning on VNM...
+2026-03-23 18:16:37,011 | INFO     | updater |     Post-update validation: AUC=0.6107  Acc=0.5500
+2026-03-23 18:16:37,030 | INFO     | models | Saved ensemble for VNM h=5
+2026-03-23 18:16:37,032 | INFO     | updater |   VNM: updated | new_rows=3336 | total_rows=3336 | val_auc=0.6107
+2026-03-23 18:16:37,033 | INFO     | updater |   Updating VIC...
+2026-03-23 18:16:37,115 | INFO     | features | Feature matrix: 3336 rows × 108 columns
+2026-03-23 18:16:37,118 | INFO     | updater |     Data: total=3336, train=2836, val=500
+2026-03-23 18:16:37,126 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:16:37,467 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:16:37,562 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:16:42,907 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:16:42,908 | INFO     | transformer_pipeline | [transformer] Fine-tuning on VIC...
+2026-03-23 18:16:42,987 | INFO     | updater |     Post-update validation: AUC=0.4159  Acc=0.4400
+2026-03-23 18:16:42,995 | INFO     | models | Saved ensemble for VIC h=5
+2026-03-23 18:16:42,997 | INFO     | updater |   VIC: updated | new_rows=3336 | total_rows=3336 | val_auc=0.4159
+2026-03-23 18:16:42,997 | INFO     | updater |   Updating HPG...
+2026-03-23 18:16:43,116 | INFO     | features | Feature matrix: 3288 rows × 108 columns
+2026-03-23 18:16:43,118 | INFO     | updater |     Data: total=3288, train=2795, val=493
+2026-03-23 18:16:43,127 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:16:43,587 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:16:43,735 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:16:52,529 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:16:52,529 | INFO     | transformer_pipeline | [transformer] Fine-tuning on HPG...
+2026-03-23 18:16:52,596 | INFO     | updater |     Post-update validation: AUC=0.5058  Acc=0.5172
+2026-03-23 18:16:52,605 | INFO     | models | Saved ensemble for HPG h=5
+2026-03-23 18:16:52,607 | INFO     | updater |   HPG: updated | new_rows=3288 | total_rows=3288 | val_auc=0.5058
+2026-03-23 18:16:52,607 | INFO     | updater |   Updating VCB...
+2026-03-23 18:16:52,705 | INFO     | features | Feature matrix: 3359 rows × 108 columns
+2026-03-23 18:16:52,708 | INFO     | updater |     Data: total=3359, train=2856, val=503
+2026-03-23 18:16:52,718 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:16:53,151 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:16:53,385 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:17:09,252 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:17:09,252 | INFO     | transformer_pipeline | [transformer] Fine-tuning on VCB...
+2026-03-23 18:17:09,362 | INFO     | updater |     Post-update validation: AUC=0.5479  Acc=0.5268
+2026-03-23 18:17:09,372 | INFO     | models | Saved ensemble for VCB h=5
+2026-03-23 18:17:09,376 | INFO     | updater |   VCB: updated | new_rows=3359 | total_rows=3359 | val_auc=0.5479
+2026-03-23 18:17:09,377 | INFO     | updater |   Updating FPT...
+2026-03-23 18:17:09,474 | INFO     | features | Feature matrix: 3358 rows × 108 columns
+2026-03-23 18:17:09,476 | INFO     | updater |     Data: total=3358, train=2855, val=503
+2026-03-23 18:17:09,482 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:17:09,604 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:17:09,870 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:17:34,268 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:17:34,268 | INFO     | transformer_pipeline | [transformer] Fine-tuning on FPT...
+2026-03-23 18:17:34,374 | INFO     | updater |     Post-update validation: AUC=0.4813  Acc=0.4811
+2026-03-23 18:17:34,382 | INFO     | models | Saved ensemble for FPT h=5
+2026-03-23 18:17:34,385 | INFO     | updater |   FPT: updated | new_rows=3358 | total_rows=3358 | val_auc=0.4813
+2026-03-23 18:17:34,385 | INFO     | updater |   Updating MWG...
+2026-03-23 18:17:34,478 | INFO     | features | Feature matrix: 2625 rows × 108 columns
+2026-03-23 18:17:34,480 | INFO     | updater |     Data: total=2625, train=2232, val=393
+2026-03-23 18:17:34,486 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:17:34,903 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:17:34,984 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:17:39,296 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:17:39,296 | INFO     | transformer_pipeline | [transformer] Fine-tuning on MWG...
+2026-03-23 18:17:39,363 | INFO     | updater |     Post-update validation: AUC=0.5356  Acc=0.5267
+2026-03-23 18:17:39,372 | INFO     | models | Saved ensemble for MWG h=5
+2026-03-23 18:17:39,376 | INFO     | updater |   MWG: updated | new_rows=2625 | total_rows=2625 | val_auc=0.5356
+2026-03-23 18:17:39,377 | INFO     | updater |   Updating MSN...
+2026-03-23 18:17:39,476 | INFO     | features | Feature matrix: 3319 rows × 108 columns
+2026-03-23 18:17:39,478 | INFO     | updater |     Data: total=3319, train=2822, val=497
+2026-03-23 18:17:39,489 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:17:39,926 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:17:40,037 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:17:47,950 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:17:47,950 | INFO     | transformer_pipeline | [transformer] Fine-tuning on MSN...
+2026-03-23 18:17:48,016 | INFO     | updater |     Post-update validation: AUC=0.5445  Acc=0.5191
+2026-03-23 18:17:48,026 | INFO     | models | Saved ensemble for MSN h=5
+2026-03-23 18:17:48,028 | INFO     | updater |   MSN: updated | new_rows=3319 | total_rows=3319 | val_auc=0.5445
+2026-03-23 18:17:48,028 | INFO     | updater |   Updating SSI...
+2026-03-23 18:17:48,119 | INFO     | features | Feature matrix: 3359 rows × 108 columns
+2026-03-23 18:17:48,122 | INFO     | updater |     Data: total=3359, train=2856, val=503
+2026-03-23 18:17:48,127 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:17:48,242 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:17:48,363 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:17:53,475 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:17:53,476 | INFO     | transformer_pipeline | [transformer] Fine-tuning on SSI...
+2026-03-23 18:17:53,561 | INFO     | updater |     Post-update validation: AUC=0.5943  Acc=0.5348
+2026-03-23 18:17:53,568 | INFO     | models | Saved ensemble for SSI h=5
+2026-03-23 18:17:53,570 | INFO     | updater |   SSI: updated | new_rows=3359 | total_rows=3359 | val_auc=0.5943
+2026-03-23 18:17:53,570 | INFO     | updater |   Updating GAS...
+2026-03-23 18:17:53,672 | INFO     | features | Feature matrix: 3165 rows × 108 columns
+2026-03-23 18:17:53,675 | INFO     | updater |     Data: total=3165, train=2691, val=474
+2026-03-23 18:17:53,683 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:17:53,829 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:17:54,166 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:18:10,855 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:18:10,855 | INFO     | transformer_pipeline | [transformer] Fine-tuning on GAS...
+2026-03-23 18:18:10,953 | INFO     | updater |     Post-update validation: AUC=0.5065  Acc=0.5063
+2026-03-23 18:18:10,961 | INFO     | models | Saved ensemble for GAS h=5
+2026-03-23 18:18:10,963 | INFO     | updater |   GAS: updated | new_rows=3165 | total_rows=3165 | val_auc=0.5065
+2026-03-23 18:18:10,963 | INFO     | updater |   Updating PLX...
+2026-03-23 18:18:11,042 | INFO     | features | Feature matrix: 1984 rows × 108 columns
+2026-03-23 18:18:11,044 | INFO     | updater |     Data: total=1984, train=1687, val=297
+2026-03-23 18:18:11,052 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:18:11,429 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:18:11,548 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:18:27,394 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:18:27,394 | INFO     | transformer_pipeline | [transformer] Fine-tuning on PLX...
+2026-03-23 18:18:27,473 | INFO     | updater |     Post-update validation: AUC=0.5168  Acc=0.5522
+2026-03-23 18:18:27,482 | INFO     | models | Saved ensemble for PLX h=5
+2026-03-23 18:18:27,484 | INFO     | updater |   PLX: updated | new_rows=1984 | total_rows=1984 | val_auc=0.5168
+2026-03-23 18:18:27,484 | INFO     | updater |   Updating SAB...
+2026-03-23 18:18:27,566 | INFO     | features | Feature matrix: 2069 rows × 108 columns
+2026-03-23 18:18:27,568 | INFO     | updater |     Data: total=2069, train=1759, val=310
+2026-03-23 18:18:27,573 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:18:27,763 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:18:27,915 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:18:33,311 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:18:33,311 | INFO     | transformer_pipeline | [transformer] Fine-tuning on SAB...
+2026-03-23 18:18:33,374 | INFO     | updater |     Post-update validation: AUC=0.5700  Acc=0.5935
+2026-03-23 18:18:33,382 | INFO     | models | Saved ensemble for SAB h=5
+2026-03-23 18:18:33,384 | INFO     | updater |   SAB: updated | new_rows=2069 | total_rows=2069 | val_auc=0.5700
+2026-03-23 18:18:33,384 | INFO     | updater |   Updating VHM...
+2026-03-23 18:18:33,481 | INFO     | features | Feature matrix: 1888 rows × 108 columns
+2026-03-23 18:18:33,483 | INFO     | updater |     Data: total=1888, train=1605, val=283
+2026-03-23 18:18:33,495 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:18:33,873 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:18:34,048 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:18:39,534 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:18:39,534 | INFO     | transformer_pipeline | [transformer] Fine-tuning on VHM...
+2026-03-23 18:18:39,592 | INFO     | updater |     Post-update validation: AUC=0.5446  Acc=0.4912
+2026-03-23 18:18:39,603 | INFO     | models | Saved ensemble for VHM h=5
+2026-03-23 18:18:39,604 | INFO     | updater |   VHM: updated | new_rows=1888 | total_rows=1888 | val_auc=0.5446
+2026-03-23 18:18:39,605 | WARNING  | updater |   HPA: no trained model found — run --mode train first
+2026-03-23 18:18:39,605 | INFO     | updater |   Updating SHS...
+2026-03-23 18:18:39,703 | INFO     | features | Feature matrix: 3339 rows × 108 columns
+2026-03-23 18:18:39,705 | INFO     | updater |     Data: total=3339, train=2839, val=500
+2026-03-23 18:18:39,723 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:18:40,949 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:18:41,331 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:18:54,905 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:18:54,905 | INFO     | transformer_pipeline | [transformer] Fine-tuning on SHS...
+2026-03-23 18:18:55,003 | INFO     | updater |     Post-update validation: AUC=0.5252  Acc=0.5360
+2026-03-23 18:18:55,022 | INFO     | models | Saved ensemble for SHS h=5
+2026-03-23 18:18:55,025 | INFO     | updater |   SHS: updated | new_rows=3339 | total_rows=3339 | val_auc=0.5252
+2026-03-23 18:18:55,026 | INFO     | updater |   Updating VGI...
+2026-03-23 18:18:55,098 | INFO     | features | Feature matrix: 1660 rows × 108 columns
+2026-03-23 18:18:55,100 | INFO     | updater |     Data: total=1660, train=1411, val=249
+2026-03-23 18:18:55,105 | INFO     | updater |     Refitting XGBoost...
+2026-03-23 18:18:55,217 | INFO     | updater |     Refitting LightGBM...
+2026-03-23 18:18:55,443 | INFO     | updater |     Warm-starting LSTM (5 epochs)...
+2026-03-23 18:19:00,663 | INFO     | updater |     Fine-tuning transformer (5 epochs)...
+2026-03-23 18:19:00,664 | INFO     | transformer_pipeline | [transformer] Fine-tuning on VGI...
+2026-03-23 18:19:00,714 | INFO     | updater |     Post-update validation: AUC=0.6185  Acc=0.5944
+2026-03-23 18:19:00,723 | INFO     | models | Saved ensemble for VGI h=5
+2026-03-23 18:19:00,725 | INFO     | updater |   VGI: updated | new_rows=1660 | total_rows=1660 | val_auc=0.6185
+2026-03-23 18:19:00,725 | WARNING  | updater |   GEX: no trained model found — run --mode train first
+2026-03-23 18:19:00,725 | WARNING  | updater |   MSB: no trained model found — run --mode train first
+2026-03-23 18:19:00,726 | INFO     | updater | Update summary saved to results\update_summary_20260323_1819.json
+2026-03-23 18:19:00,727 | INFO     | main | Update complete: 14 symbols updated, 0 failed
+2026-03-23 18:26:18,569 | INFO     | pipeline | === Training Pipeline | horizon=5d | 17 symbols ===
+2026-03-23 18:26:18,575 | INFO     | pipeline | === Stage 1: Pattern Transformer Pre-training ===
+2026-03-23 18:26:20,044 | INFO     | pipeline | PyTorch 2.10.0+cpu detected — building Pattern Transformer
+2026-03-23 18:26:20,047 | INFO     | transformer_pipeline | [transformer] Loading existing pre-trained model (skipping re-train)...
+2026-03-23 18:26:20,060 | INFO     | pipeline | Pattern Transformer pre-train AUC: 0.5544
+2026-03-23 18:26:20,061 | INFO     | pipeline | === Stage 2: Per-symbol training ===
+2026-03-23 18:26:20,061 | INFO     | pipeline | --- VNM -----------------------------------
+2026-03-23 18:26:20,139 | INFO     | features | Feature matrix: 3336 rows × 108 columns
+2026-03-23 18:26:20,142 | INFO     | target_engineering |   Vol-adjusted labels: 69.1% of rows kept (threshold=0.3x daily vol, dropped 30.9% near-zero moves)
+2026-03-23 18:26:20,144 | INFO     | target_engineering |   Vol-adjusted labels: 82.2% of rows kept (threshold=0.3x daily vol, dropped 17.8% near-zero moves)
+2026-03-23 18:26:20,145 | INFO     | target_engineering |   Vol-adjusted labels: 85.8% of rows kept (threshold=0.3x daily vol, dropped 14.2% near-zero moves)
+2026-03-23 18:26:20,147 | INFO     | target_engineering |   Vol-adjusted labels: 90.1% of rows kept (threshold=0.3x daily vol, dropped 9.9% near-zero moves)
+2026-03-23 18:26:20,154 | INFO     | pipeline |   Splits: train=2004, val=429, test=429
+2026-03-23 18:26:20,463 | INFO     | target_engineering |   Feature selection: kept 40/99 features (dropped 59 low-importance)
+2026-03-23 18:26:20,465 | INFO     | tuner | Tuning XGBoost (600 trials)...
+2026-03-23 18:28:57,117 | INFO     | tuner | XGB best AUC: 0.5647  params={'n_estimators': 106, 'max_depth': 7, 'learning_rate': 0.010047716489779042, 'subsample': 0.9702374041976111, 'colsample_bytree': 0.6070653342244452, 'min_child_weight': 10, 'gamma': 0.998762650791228, 'reg_alpha': 1.1121244472531926, 'reg_lambda': 2.4953225542988444, 'eval_metric': 'logloss', 'random_state': 42, 'n_jobs': -1}
+2026-03-23 18:28:57,120 | INFO     | tuner | Tuning LightGBM (600 trials)...
+2026-03-23 18:30:17,366 | INFO     | tuner | LGBM best AUC: 0.6459  params={'n_estimators': 460, 'num_leaves': 140, 'learning_rate': 0.15376180658693553, 'feature_fraction': 0.6067748986647387, 'bagging_fraction': 0.7571083797520407, 'bagging_freq': 1, 'min_child_samples': 13, 'reg_alpha': 1.1297915916859438, 'reg_lambda': 1.0519944222479536, 'random_state': 42, 'n_jobs': -1, 'verbose': -1}
+2026-03-23 18:30:17,368 | INFO     | tuner | Tuning LSTM (100 trials)...
+2026-03-23 18:34:30,608 | INFO     | features | Feature matrix: 3336 rows × 108 columns
+2026-03-23 18:34:32,774 | INFO     | features | Feature matrix: 3336 rows × 108 columns
+2026-03-23 18:34:33,093 | INFO     | features | Feature matrix: 3288 rows × 108 columns
+2026-03-23 18:34:33,403 | INFO     | features | Feature matrix: 3359 rows × 108 columns
+2026-03-23 18:34:33,850 | INFO     | features | Feature matrix: 3358 rows × 108 columns
+2026-03-23 18:34:34,223 | INFO     | features | Feature matrix: 2625 rows × 108 columns
+2026-03-23 18:34:34,407 | INFO     | features | Feature matrix: 3319 rows × 108 columns
+2026-03-23 18:34:34,646 | INFO     | features | Feature matrix: 3359 rows × 108 columns
+2026-03-23 18:34:34,847 | INFO     | features | Feature matrix: 3165 rows × 108 columns
+2026-03-23 18:34:35,142 | INFO     | features | Feature matrix: 1984 rows × 108 columns
+2026-03-23 18:34:35,359 | INFO     | features | Feature matrix: 2069 rows × 108 columns
+2026-03-23 18:34:35,518 | INFO     | features | Feature matrix: 1888 rows × 108 columns
+2026-03-23 18:34:35,588 | ERROR    | pipeline | Prediction failed for HPA: No trained model for HPA. Run --mode train first.
+2026-03-23 18:34:35,676 | INFO     | features | Feature matrix: 3339 rows × 108 columns
+2026-03-23 18:34:35,962 | INFO     | features | Feature matrix: 1660 rows × 108 columns
+2026-03-23 18:34:36,017 | ERROR    | pipeline | Prediction failed for GEX: No trained model for GEX. Run --mode train first.
+2026-03-23 18:34:36,017 | ERROR    | pipeline | Prediction failed for MSB: No trained model for MSB. Run --mode train first.
+2026-03-23 18:34:36,018 | INFO     | pipeline | Predictions saved to results\predictions_20260323.json
+2026-03-23 18:34:36,024 | INFO     | main | VNM: [DOWN] +0.14% | confidence=49.8% | target_price=60.88
+2026-03-23 18:34:36,363 | WARNING  | main | Signal generation failed for VNM: name 'pivot_row' is not defined
+2026-03-23 18:34:36,363 | INFO     | main | VIC: [UP]   +0.38% | confidence=54.5% | target_price=126.07
+2026-03-23 18:34:36,619 | WARNING  | main | Signal generation failed for VIC: name 'pivot_row' is not defined
+2026-03-23 18:34:36,619 | INFO     | main | HPG: [UP]   +0.66% | confidence=60.2% | target_price=25.67
+2026-03-23 18:34:36,874 | INFO     | trade_signals |   HPG: signal suppressed (R/R=0.62 < 1.5)
+2026-03-23 18:34:36,874 | WARNING  | main | Signal generation failed for HPG: name 'pivot_row' is not defined
+2026-03-23 18:34:36,874 | INFO     | main | VCB: [UP]   +0.39% | confidence=56.5% | target_price=57.82
+2026-03-23 18:34:37,128 | INFO     | trade_signals |   VCB: signal suppressed (R/R=0.50 < 1.5)
+2026-03-23 18:34:37,128 | WARNING  | main | Signal generation failed for VCB: name 'pivot_row' is not defined
+2026-03-23 18:34:37,128 | INFO     | main | FPT: [UP]   +0.35% | confidence=54.2% | target_price=73.35
+2026-03-23 18:34:37,387 | INFO     | trade_signals |   FPT: signal suppressed (R/R=0.84 < 1.5)
+2026-03-23 18:34:37,387 | WARNING  | main | Signal generation failed for FPT: name 'pivot_row' is not defined
+2026-03-23 18:34:37,387 | INFO     | main | MWG: [DOWN] +0.04% | confidence=43.9% | target_price=74.23
+2026-03-23 18:34:37,592 | WARNING  | main | Signal generation failed for MWG: name 'pivot_row' is not defined
+2026-03-23 18:34:37,592 | INFO     | main | MSN: [UP]   +0.34% | confidence=57.3% | target_price=71.04
+2026-03-23 18:34:37,874 | INFO     | trade_signals |   MSN: signal suppressed (R/R=0.64 < 1.5)
+2026-03-23 18:34:37,874 | WARNING  | main | Signal generation failed for MSN: name 'pivot_row' is not defined
+2026-03-23 18:34:37,874 | INFO     | main | SSI: [DOWN] +0.06% | confidence=45.8% | target_price=25.41
+2026-03-23 18:34:38,121 | INFO     | trade_signals |   SSI: signal suppressed (R/R=0.28 < 1.5)
+2026-03-23 18:34:38,121 | WARNING  | main | Signal generation failed for SSI: name 'pivot_row' is not defined
+2026-03-23 18:34:38,122 | INFO     | main | GAS: [DOWN] -0.02% | confidence=44.2% | target_price=80.48
+2026-03-23 18:34:38,365 | INFO     | trade_signals |   GAS: signal suppressed (R/R=0.46 < 1.5)
+2026-03-23 18:34:38,365 | WARNING  | main | Signal generation failed for GAS: name 'pivot_row' is not defined
+2026-03-23 18:34:38,365 | INFO     | main | PLX: [DOWN] -0.14% | confidence=44.9% | target_price=40.94
+2026-03-23 18:34:38,534 | INFO     | trade_signals |   PLX: signal suppressed (R/R=0.28 < 1.5)
+2026-03-23 18:34:38,534 | WARNING  | main | Signal generation failed for PLX: name 'pivot_row' is not defined
+2026-03-23 18:34:38,534 | INFO     | main | SAB: [DOWN] -0.15% | confidence=45.9% | target_price=42.83
+2026-03-23 18:34:38,703 | INFO     | trade_signals |   SAB: signal suppressed (R/R=0.50 < 1.5)
+2026-03-23 18:34:38,703 | WARNING  | main | Signal generation failed for SAB: name 'pivot_row' is not defined
+2026-03-23 18:34:38,703 | INFO     | main | VHM: [UP]   +0.16% | confidence=51.4% | target_price=98.16
+2026-03-23 18:34:38,935 | WARNING  | main | Signal generation failed for VHM: name 'pivot_row' is not defined
+2026-03-23 18:34:38,936 | INFO     | main | SHS: [DOWN] -0.19% | confidence=40.5% | target_price=14.77
+2026-03-23 18:34:39,188 | INFO     | trade_signals |   SHS: signal suppressed (R/R=0.19 < 1.5)
+2026-03-23 18:34:39,188 | WARNING  | main | Signal generation failed for SHS: name 'pivot_row' is not defined
+2026-03-23 18:34:39,188 | INFO     | main | VGI: [DOWN] -0.12% | confidence=41.9% | target_price=81.60
+2026-03-23 18:34:39,329 | INFO     | trade_signals |   VGI: signal suppressed (R/R=0.30 < 1.5)
+2026-03-23 18:34:39,329 | WARNING  | main | Signal generation failed for VGI: name 'pivot_row' is not defined
+2026-03-23 18:37:59,433 | INFO     | features | Feature matrix: 3336 rows × 108 columns
+2026-03-23 18:38:01,415 | INFO     | features | Feature matrix: 3336 rows × 108 columns
+2026-03-23 18:38:01,711 | INFO     | features | Feature matrix: 3288 rows × 108 columns
+2026-03-23 18:38:02,079 | INFO     | features | Feature matrix: 3359 rows × 108 columns
+2026-03-23 18:38:02,538 | INFO     | features | Feature matrix: 3358 rows × 108 columns
+2026-03-23 18:38:02,868 | INFO     | features | Feature matrix: 2625 rows × 108 columns
+2026-03-23 18:38:03,085 | INFO     | features | Feature matrix: 3319 rows × 108 columns
+2026-03-23 18:38:03,310 | INFO     | features | Feature matrix: 3359 rows × 108 columns
+2026-03-23 18:38:03,515 | INFO     | features | Feature matrix: 3165 rows × 108 columns
+2026-03-23 18:38:03,777 | INFO     | features | Feature matrix: 1984 rows × 108 columns
+2026-03-23 18:38:04,113 | INFO     | features | Feature matrix: 2069 rows × 108 columns
+2026-03-23 18:38:04,268 | INFO     | features | Feature matrix: 1888 rows × 108 columns
+2026-03-23 18:38:04,345 | ERROR    | pipeline | Prediction failed for HPA: No trained model for HPA. Run --mode train first.
+2026-03-23 18:38:04,436 | INFO     | features | Feature matrix: 3339 rows × 108 columns
+2026-03-23 18:38:04,700 | INFO     | features | Feature matrix: 1660 rows × 108 columns
+2026-03-23 18:38:04,755 | ERROR    | pipeline | Prediction failed for GEX: No trained model for GEX. Run --mode train first.
+2026-03-23 18:38:04,755 | ERROR    | pipeline | Prediction failed for MSB: No trained model for MSB. Run --mode train first.
+2026-03-23 18:38:04,756 | INFO     | pipeline | Predictions saved to results\predictions_20260323.json
+2026-03-23 18:38:04,761 | INFO     | main | VNM: [DOWN] +0.14% | confidence=49.8% | target_price=60.88
+2026-03-23 18:38:05,006 | INFO     | main | 
+====================================================
+  VNM     HOLD [--]  Conf=53.0%  AUC=0.668
+====================================================
+  Entry zone :         60 -         61
+  Stop-loss  :         58  (-4.6%)
+  Take-profit:         66  (+9.2%)
+  R/R ratio  : 1 : 2.00
+  Position   : 0.0% of capital
+  Pivot PP   :         60  S1=60  R1=61
+  Fib 61.8%  :         64  38.2%=68
+  Basis      : Models: ichimoku, supertrend, psar, don_pct | ATR14=2 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': 1, 'don_pct': -1, 'squeeze': -1, 'pivot': 0}
+2026-03-23 18:38:05,006 | INFO     | main | VIC: [UP]   +0.38% | confidence=54.5% | target_price=126.07
+2026-03-23 18:38:05,248 | INFO     | main | 
+====================================================
+  VIC     BUY  [UP]  Conf=51.5%  AUC=0.297
+====================================================
+  Entry zone :        123 -        127
+  Stop-loss  :        117  (-6.5%)
+  Take-profit:        139  (+10.6%)
+  R/R ratio  : 1 : 1.62
+  Position   : 5.4% of capital
+  Pivot PP   :        139  S1=131  R1=144
+  Fib 61.8%  :        146  38.2%=158
+  Basis      : ATR14=9 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'donchian': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:38:05,249 | INFO     | main | HPG: [UP]   +0.66% | confidence=60.2% | target_price=25.67
+2026-03-23 18:38:05,491 | INFO     | trade_signals |   HPG: signal suppressed (R/R=0.62 < 1.5)
+2026-03-23 18:38:05,491 | INFO     | main | 
+====================================================
+  HPG     HOLD [--]  Conf=57.1%  AUC=0.678
+====================================================
+  Entry zone :         25 -         26
+  Stop-loss  :         24  (-4.0%)
+  Take-profit:         26  (+2.5%)
+  R/R ratio  : 1 : 0.62
+  Position   : 0.0% of capital
+  Pivot PP   :         26  S1=26  R1=26
+  Fib 61.8%  :         27  38.2%=28
+  Basis      : AI conf=60.2% | ATR14=1 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:38:05,491 | INFO     | main | VCB: [UP]   +0.39% | confidence=56.5% | target_price=57.82
+2026-03-23 18:38:05,739 | INFO     | trade_signals |   VCB: signal suppressed (R/R=0.50 < 1.5)
+2026-03-23 18:38:05,740 | INFO     | main | 
+====================================================
+  VCB     HOLD [--]  Conf=53.9%  AUC=0.648
+====================================================
+  Entry zone :         57 -         58
+  Stop-loss  :         55  (-4.0%)
+  Take-profit:         59  (+2.0%)
+  R/R ratio  : 1 : 0.50
+  Position   : 0.0% of capital
+  Pivot PP   :         59  S1=57  R1=59
+  Fib 61.8%  :         60  38.2%=63
+  Basis      : ATR14=2 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': 0}
+2026-03-23 18:38:05,740 | INFO     | main | FPT: [UP]   +0.35% | confidence=54.2% | target_price=73.35
+2026-03-23 18:38:05,978 | INFO     | trade_signals |   FPT: signal suppressed (R/R=0.84 < 1.5)
+2026-03-23 18:38:05,979 | INFO     | main | 
+====================================================
+  FPT     HOLD [--]  Conf=51.2%  AUC=0.665
+====================================================
+  Entry zone :         72 -         74
+  Stop-loss  :         70  (-4.0%)
+  Take-profit:         76  (+3.4%)
+  R/R ratio  : 1 : 0.84
+  Position   : 0.0% of capital
+  Pivot PP   :         75  S1=73  R1=76
+  Fib 61.8%  :         80  38.2%=85
+  Basis      : ATR14=3 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:38:05,979 | INFO     | main | MWG: [DOWN] +0.04% | confidence=43.9% | target_price=74.23
+2026-03-23 18:38:06,180 | INFO     | main | 
+====================================================
+  MWG     SELL [DOWN]  Conf=61.1%  AUC=0.594
+====================================================
+  Entry zone :         74 -         75
+  Stop-loss  :         79  (+6.8%)
+  Take-profit:         64  (-13.6%)
+  R/R ratio  : 1 : 2.00
+  Position   : 2.1% of capital
+  Pivot PP   :         80  S1=79  R1=81
+  Fib 61.8%  :         82  38.2%=87
+  Basis      : Models: ichimoku, supertrend, psar, hma20 | ATR14=3 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'donchian': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:38:06,180 | INFO     | main | MSN: [UP]   +0.34% | confidence=57.3% | target_price=71.04
+2026-03-23 18:38:06,424 | INFO     | trade_signals |   MSN: signal suppressed (R/R=0.64 < 1.5)
+2026-03-23 18:38:06,424 | INFO     | main | 
+====================================================
+  MSN     HOLD [--]  Conf=55.6%  AUC=0.643
+====================================================
+  Entry zone :         70 -         71
+  Stop-loss  :         68  (-4.0%)
+  Take-profit:         73  (+2.5%)
+  R/R ratio  : 1 : 0.64
+  Position   : 0.0% of capital
+  Pivot PP   :         73  S1=70  R1=74
+  Fib 61.8%  :         72  38.2%=76
+  Basis      : Models: psar | ATR14=3 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': 1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': 0}
+2026-03-23 18:38:06,425 | INFO     | main | SSI: [DOWN] +0.06% | confidence=45.8% | target_price=25.41
+2026-03-23 18:38:06,684 | INFO     | trade_signals |   SSI: signal suppressed (R/R=0.28 < 1.5)
+2026-03-23 18:38:06,684 | INFO     | main | 
+====================================================
+  SSI     HOLD [--]  Conf=59.2%  AUC=0.654
+====================================================
+  Entry zone :         25 -         26
+  Stop-loss  :         27  (+7.0%)
+  Take-profit:         25  (-2.0%)
+  R/R ratio  : 1 : 0.28
+  Position   : 0.0% of capital
+  Pivot PP   :         27  S1=27  R1=27
+  Fib 61.8%  :         29  38.2%=31
+  Basis      : Models: ichimoku, supertrend, psar, hma20 | ATR14=1 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:38:06,685 | INFO     | main | GAS: [DOWN] -0.02% | confidence=44.2% | target_price=80.48
+2026-03-23 18:38:06,926 | INFO     | trade_signals |   GAS: signal suppressed (R/R=0.46 < 1.5)
+2026-03-23 18:38:06,927 | INFO     | main | 
+====================================================
+  GAS     HOLD [--]  Conf=60.1%  AUC=0.520
+====================================================
+  Entry zone :         79 -         83
+  Stop-loss  :         84  (+4.4%)
+  Take-profit:         79  (-2.0%)
+  R/R ratio  : 1 : 0.46
+  Position   : 0.0% of capital
+  Pivot PP   :         84  S1=80  R1=87
+  Fib 61.8%  :         99  38.2%=111
+  Basis      : Models: ichimoku, supertrend, psar, hma20 | ATR14=7 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': 0}
+2026-03-23 18:38:06,927 | INFO     | main | PLX: [DOWN] -0.14% | confidence=44.9% | target_price=40.94
+2026-03-23 18:38:07,087 | INFO     | trade_signals |   PLX: signal suppressed (R/R=0.28 < 1.5)
+2026-03-23 18:38:07,088 | INFO     | main | 
+====================================================
+  PLX     HOLD [--]  Conf=60.1%  AUC=0.441
+====================================================
+  Entry zone :         40 -         42
+  Stop-loss  :         44  (+7.2%)
+  Take-profit:         40  (-2.0%)
+  R/R ratio  : 1 : 0.28
+  Position   : 0.0% of capital
+  Pivot PP   :         44  S1=42  R1=45
+  Fib 61.8%  :         52  38.2%=59
+  Basis      : Models: ichimoku, supertrend, psar, hma20 | ATR14=4 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:38:07,088 | INFO     | main | SAB: [DOWN] -0.15% | confidence=45.9% | target_price=42.83
+2026-03-23 18:38:07,253 | INFO     | trade_signals |   SAB: signal suppressed (R/R=0.50 < 1.5)
+2026-03-23 18:38:07,253 | INFO     | main | 
+====================================================
+  SAB     HOLD [--]  Conf=58.4%  AUC=0.555
+====================================================
+  Entry zone :         43 -         43
+  Stop-loss  :         45  (+4.0%)
+  Take-profit:         42  (-2.0%)
+  R/R ratio  : 1 : 0.50
+  Position   : 0.0% of capital
+  Pivot PP   :         43  S1=42  R1=44
+  Fib 61.8%  :         45  38.2%=47
+  Basis      : Models: ichimoku, supertrend, psar, hma20 | ATR14=1 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': 0}
+2026-03-23 18:38:07,254 | INFO     | main | VHM: [UP]   +0.16% | confidence=51.4% | target_price=98.16
+2026-03-23 18:38:07,487 | INFO     | main | 
+====================================================
+  VHM     HOLD [--]  Conf=51.0%  AUC=0.431
+====================================================
+  Entry zone :         96 -        100
+  Stop-loss  :         90  (-7.8%)
+  Take-profit:        113  (+15.6%)
+  R/R ratio  : 1 : 2.00
+  Position   : 0.0% of capital
+  Pivot PP   :        100  S1=97  R1=102
+  Fib 61.8%  :         97  38.2%=103
+  Basis      : Models: psar, squeeze | ATR14=5 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': 1, 'hma20': -1, 'don_pct': 0, 'squeeze': 1, 'pivot': 0}
+2026-03-23 18:38:07,487 | INFO     | main | SHS: [DOWN] -0.19% | confidence=40.5% | target_price=14.77
+2026-03-23 18:38:07,733 | INFO     | trade_signals |   SHS: signal suppressed (R/R=0.19 < 1.5)
+2026-03-23 18:38:07,733 | INFO     | main | 
+====================================================
+  SHS     HOLD [--]  Conf=64.5%  AUC=0.572
+====================================================
+  Entry zone :         15 -         15
+  Stop-loss  :         17  (+11.6%)
+  Take-profit:         14  (-2.2%)
+  R/R ratio  : 1 : 0.19
+  Position   : 0.0% of capital
+  Pivot PP   :         16  S1=15  R1=17
+  Fib 61.8%  :         17  38.2%=18
+  Basis      : Models: ichimoku, supertrend, psar, hma20 | ATR14=1 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:38:07,734 | INFO     | main | VGI: [DOWN] -0.12% | confidence=41.9% | target_price=81.60
+2026-03-23 18:38:07,865 | INFO     | trade_signals |   VGI: signal suppressed (R/R=0.30 < 1.5)
+2026-03-23 18:38:07,865 | INFO     | main | 
+====================================================
+  VGI     HOLD [--]  Conf=61.7%  AUC=0.415
+====================================================
+  Entry zone :         81 -         83
+  Stop-loss  :         87  (+6.6%)
+  Take-profit:         80  (-2.0%)
+  R/R ratio  : 1 : 0.30
+  Position   : 0.0% of capital
+  Pivot PP   :         86  S1=83  R1=88
+  Fib 61.8%  :         95  38.2%=104
+  Basis      : Models: ichimoku, supertrend, psar, don_pct | ATR14=6 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': 1, 'don_pct': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:38:07,867 | INFO     | trade_signals | Signals saved to results\signals_20260323.json
+2026-03-23 18:45:39,674 | INFO     | features | Feature matrix: 3336 rows × 108 columns
+2026-03-23 18:45:41,596 | INFO     | features | Feature matrix: 3336 rows × 108 columns
+2026-03-23 18:45:41,853 | INFO     | features | Feature matrix: 3288 rows × 108 columns
+2026-03-23 18:45:42,179 | INFO     | features | Feature matrix: 3359 rows × 108 columns
+2026-03-23 18:45:42,720 | INFO     | features | Feature matrix: 3358 rows × 108 columns
+2026-03-23 18:45:43,120 | INFO     | features | Feature matrix: 2625 rows × 108 columns
+2026-03-23 18:45:43,302 | INFO     | features | Feature matrix: 3319 rows × 108 columns
+2026-03-23 18:45:43,617 | INFO     | features | Feature matrix: 3359 rows × 108 columns
+2026-03-23 18:45:43,907 | INFO     | features | Feature matrix: 3165 rows × 108 columns
+2026-03-23 18:45:44,228 | INFO     | features | Feature matrix: 1984 rows × 108 columns
+2026-03-23 18:45:44,570 | INFO     | features | Feature matrix: 2069 rows × 108 columns
+2026-03-23 18:45:44,864 | INFO     | features | Feature matrix: 1888 rows × 108 columns
+2026-03-23 18:45:44,952 | ERROR    | pipeline | Prediction failed for HPA: No trained model for HPA. Run --mode train first.
+2026-03-23 18:45:45,059 | INFO     | features | Feature matrix: 3339 rows × 108 columns
+2026-03-23 18:45:45,387 | INFO     | features | Feature matrix: 1660 rows × 108 columns
+2026-03-23 18:45:45,437 | ERROR    | pipeline | Prediction failed for GEX: No trained model for GEX. Run --mode train first.
+2026-03-23 18:45:45,438 | ERROR    | pipeline | Prediction failed for MSB: No trained model for MSB. Run --mode train first.
+2026-03-23 18:45:45,439 | INFO     | pipeline | Predictions saved to results\predictions_20260323.json
+2026-03-23 18:45:45,446 | INFO     | main | VNM: [DOWN] +0.14% | confidence=49.8% | target_price=60.88
+2026-03-23 18:45:45,955 | INFO     | main | 
+====================================================
+  VNM     HOLD [--]  Conf=53.0%  AUC=0.668
+====================================================
+  Entry zone :         60 -         61
+  Stop-loss  :         58  (-4.6%)
+  Take-profit:         66  (+9.2%)
+  R/R ratio  : 1 : 2.00
+  Position   : 0.0% of capital
+  Pivot PP   :         60  S1=60  R1=61
+  Fib 61.8%  :         64  38.2%=68
+  Basis      : Models: ichimoku, supertrend, psar, don_pct | ATR14=2 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': 1, 'don_pct': -1, 'squeeze': -1, 'pivot': 0}
+2026-03-23 18:45:45,955 | INFO     | main | VIC: [UP]   +0.38% | confidence=54.5% | target_price=126.07
+2026-03-23 18:45:46,302 | INFO     | main | 
+====================================================
+  VIC     BUY  [UP]  Conf=51.5%  AUC=0.297
+====================================================
+  Entry zone :        123 -        127
+  Stop-loss  :        117  (-6.5%)
+  Take-profit:        139  (+10.6%)
+  R/R ratio  : 1 : 1.62
+  Position   : 5.4% of capital
+  Pivot PP   :        139  S1=131  R1=144
+  Fib 61.8%  :        146  38.2%=158
+  Basis      : ATR14=9 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'donchian': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:45:46,302 | INFO     | main | HPG: [UP]   +0.66% | confidence=60.2% | target_price=25.67
+2026-03-23 18:45:46,721 | INFO     | trade_signals |   HPG: signal suppressed (R/R=0.62 < 1.5)
+2026-03-23 18:45:46,721 | INFO     | main | 
+====================================================
+  HPG     HOLD [--]  Conf=57.1%  AUC=0.678
+====================================================
+  Entry zone :         25 -         26
+  Stop-loss  :         24  (-4.0%)
+  Take-profit:         26  (+2.5%)
+  R/R ratio  : 1 : 0.62
+  Position   : 0.0% of capital
+  Pivot PP   :         26  S1=26  R1=26
+  Fib 61.8%  :         27  38.2%=28
+  Basis      : AI conf=60.2% | ATR14=1 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:45:46,721 | INFO     | main | VCB: [UP]   +0.39% | confidence=56.5% | target_price=57.82
+2026-03-23 18:45:47,179 | INFO     | trade_signals |   VCB: signal suppressed (R/R=0.50 < 1.5)
+2026-03-23 18:45:47,180 | INFO     | main | 
+====================================================
+  VCB     HOLD [--]  Conf=53.9%  AUC=0.648
+====================================================
+  Entry zone :         57 -         58
+  Stop-loss  :         55  (-4.0%)
+  Take-profit:         59  (+2.0%)
+  R/R ratio  : 1 : 0.50
+  Position   : 0.0% of capital
+  Pivot PP   :         59  S1=57  R1=59
+  Fib 61.8%  :         60  38.2%=63
+  Basis      : ATR14=2 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': 0}
+2026-03-23 18:45:47,180 | INFO     | main | FPT: [UP]   +0.35% | confidence=54.2% | target_price=73.35
+2026-03-23 18:45:47,642 | INFO     | trade_signals |   FPT: signal suppressed (R/R=0.84 < 1.5)
+2026-03-23 18:45:47,643 | INFO     | main | 
+====================================================
+  FPT     HOLD [--]  Conf=51.2%  AUC=0.665
+====================================================
+  Entry zone :         72 -         74
+  Stop-loss  :         70  (-4.0%)
+  Take-profit:         76  (+3.4%)
+  R/R ratio  : 1 : 0.84
+  Position   : 0.0% of capital
+  Pivot PP   :         75  S1=73  R1=76
+  Fib 61.8%  :         80  38.2%=85
+  Basis      : ATR14=3 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:45:47,643 | INFO     | main | MWG: [DOWN] +0.04% | confidence=43.9% | target_price=74.23
+2026-03-23 18:45:48,031 | INFO     | main | 
+====================================================
+  MWG     SELL [DOWN]  Conf=61.1%  AUC=0.594
+====================================================
+  Entry zone :         74 -         75
+  Stop-loss  :         79  (+6.8%)
+  Take-profit:         64  (-13.6%)
+  R/R ratio  : 1 : 2.00
+  Position   : 2.1% of capital
+  Pivot PP   :         80  S1=79  R1=81
+  Fib 61.8%  :         82  38.2%=87
+  Basis      : Models: ichimoku, supertrend, psar, hma20 | ATR14=3 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'donchian': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:45:48,032 | INFO     | main | MSN: [UP]   +0.34% | confidence=57.3% | target_price=71.04
+2026-03-23 18:45:48,458 | INFO     | trade_signals |   MSN: signal suppressed (R/R=0.64 < 1.5)
+2026-03-23 18:45:48,459 | INFO     | main | 
+====================================================
+  MSN     HOLD [--]  Conf=55.6%  AUC=0.643
+====================================================
+  Entry zone :         70 -         71
+  Stop-loss  :         68  (-4.0%)
+  Take-profit:         73  (+2.5%)
+  R/R ratio  : 1 : 0.64
+  Position   : 0.0% of capital
+  Pivot PP   :         73  S1=70  R1=74
+  Fib 61.8%  :         72  38.2%=76
+  Basis      : Models: psar | ATR14=3 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': 1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': 0}
+2026-03-23 18:45:48,459 | INFO     | main | SSI: [DOWN] +0.06% | confidence=45.8% | target_price=25.41
+2026-03-23 18:45:48,939 | INFO     | trade_signals |   SSI: signal suppressed (R/R=0.28 < 1.5)
+2026-03-23 18:45:48,940 | INFO     | main | 
+====================================================
+  SSI     HOLD [--]  Conf=59.2%  AUC=0.654
+====================================================
+  Entry zone :         25 -         26
+  Stop-loss  :         27  (+7.0%)
+  Take-profit:         25  (-2.0%)
+  R/R ratio  : 1 : 0.28
+  Position   : 0.0% of capital
+  Pivot PP   :         27  S1=27  R1=27
+  Fib 61.8%  :         29  38.2%=31
+  Basis      : Models: ichimoku, supertrend, psar, hma20 | ATR14=1 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:45:48,940 | INFO     | main | GAS: [DOWN] -0.02% | confidence=44.2% | target_price=80.48
+2026-03-23 18:45:49,252 | INFO     | trade_signals |   GAS: signal suppressed (R/R=0.46 < 1.5)
+2026-03-23 18:45:49,252 | INFO     | main | 
+====================================================
+  GAS     HOLD [--]  Conf=60.1%  AUC=0.520
+====================================================
+  Entry zone :         79 -         83
+  Stop-loss  :         84  (+4.4%)
+  Take-profit:         79  (-2.0%)
+  R/R ratio  : 1 : 0.46
+  Position   : 0.0% of capital
+  Pivot PP   :         84  S1=80  R1=87
+  Fib 61.8%  :         99  38.2%=111
+  Basis      : Models: ichimoku, supertrend, psar, hma20 | ATR14=7 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': 0}
+2026-03-23 18:45:49,253 | INFO     | main | PLX: [DOWN] -0.14% | confidence=44.9% | target_price=40.94
+2026-03-23 18:45:49,516 | INFO     | trade_signals |   PLX: signal suppressed (R/R=0.28 < 1.5)
+2026-03-23 18:45:49,517 | INFO     | main | 
+====================================================
+  PLX     HOLD [--]  Conf=60.1%  AUC=0.441
+====================================================
+  Entry zone :         40 -         42
+  Stop-loss  :         44  (+7.2%)
+  Take-profit:         40  (-2.0%)
+  R/R ratio  : 1 : 0.28
+  Position   : 0.0% of capital
+  Pivot PP   :         44  S1=42  R1=45
+  Fib 61.8%  :         52  38.2%=59
+  Basis      : Models: ichimoku, supertrend, psar, hma20 | ATR14=4 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:45:49,518 | INFO     | main | SAB: [DOWN] -0.15% | confidence=45.9% | target_price=42.83
+2026-03-23 18:45:49,883 | INFO     | trade_signals |   SAB: signal suppressed (R/R=0.50 < 1.5)
+2026-03-23 18:45:49,883 | INFO     | main | 
+====================================================
+  SAB     HOLD [--]  Conf=58.4%  AUC=0.555
+====================================================
+  Entry zone :         43 -         43
+  Stop-loss  :         45  (+4.0%)
+  Take-profit:         42  (-2.0%)
+  R/R ratio  : 1 : 0.50
+  Position   : 0.0% of capital
+  Pivot PP   :         43  S1=42  R1=44
+  Fib 61.8%  :         45  38.2%=47
+  Basis      : Models: ichimoku, supertrend, psar, hma20 | ATR14=1 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': 0}
+2026-03-23 18:45:49,884 | INFO     | main | VHM: [UP]   +0.16% | confidence=51.4% | target_price=98.16
+2026-03-23 18:45:50,240 | INFO     | main | 
+====================================================
+  VHM     HOLD [--]  Conf=51.0%  AUC=0.431
+====================================================
+  Entry zone :         96 -        100
+  Stop-loss  :         90  (-7.8%)
+  Take-profit:        113  (+15.6%)
+  R/R ratio  : 1 : 2.00
+  Position   : 0.0% of capital
+  Pivot PP   :        100  S1=97  R1=102
+  Fib 61.8%  :         97  38.2%=103
+  Basis      : Models: psar, squeeze | ATR14=5 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': 1, 'hma20': -1, 'don_pct': 0, 'squeeze': 1, 'pivot': 0}
+2026-03-23 18:45:50,241 | INFO     | main | SHS: [DOWN] -0.19% | confidence=40.5% | target_price=14.77
+2026-03-23 18:45:50,630 | INFO     | trade_signals |   SHS: signal suppressed (R/R=0.19 < 1.5)
+2026-03-23 18:45:50,630 | INFO     | main | 
+====================================================
+  SHS     HOLD [--]  Conf=64.5%  AUC=0.572
+====================================================
+  Entry zone :         15 -         15
+  Stop-loss  :         17  (+11.6%)
+  Take-profit:         14  (-2.2%)
+  R/R ratio  : 1 : 0.19
+  Position   : 0.0% of capital
+  Pivot PP   :         16  S1=15  R1=17
+  Fib 61.8%  :         17  38.2%=18
+  Basis      : Models: ichimoku, supertrend, psar, hma20 | ATR14=1 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': -1, 'don_pct': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:45:50,631 | INFO     | main | VGI: [DOWN] -0.12% | confidence=41.9% | target_price=81.60
+2026-03-23 18:45:50,791 | INFO     | trade_signals |   VGI: signal suppressed (R/R=0.30 < 1.5)
+2026-03-23 18:45:50,791 | INFO     | main | 
+====================================================
+  VGI     HOLD [--]  Conf=61.7%  AUC=0.415
+====================================================
+  Entry zone :         81 -         83
+  Stop-loss  :         87  (+6.6%)
+  Take-profit:         80  (-2.0%)
+  R/R ratio  : 1 : 0.30
+  Position   : 0.0% of capital
+  Pivot PP   :         86  S1=83  R1=88
+  Fib 61.8%  :         95  38.2%=104
+  Basis      : Models: ichimoku, supertrend, psar, don_pct | ATR14=6 | SL=1.5xATR TP=3.0xATR
+  Math votes : {'ichimoku': -1, 'supertrend': -1, 'psar': -1, 'hma20': 1, 'don_pct': -1, 'squeeze': -1, 'pivot': -1}
+2026-03-23 18:45:50,793 | INFO     | trade_signals | Signals saved to results\signals_20260323.json

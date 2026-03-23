@@ -52,9 +52,9 @@
   "trained_at": "2026-03-23T01:49:52.894023",
   "auc": 0.2972582972582973,
   "accuracy": 0.34375,
-  "updated_at": "2026-03-23T17:06:14.582047",
+  "updated_at": "2026-03-23T18:16:42.995908",
   "total_rows": 3336,
   "last_close": 125.6,
   "last_date": "2026-03-23",
-  "val_auc_after_update": 0.4141720779220779
+  "val_auc_after_update": 0.41592532467532467
 }

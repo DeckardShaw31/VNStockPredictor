@@ -2,20 +2,18 @@
 trade_signals.py — BUY / SELL / HOLD signal generation with
 entry price, stop-loss, take-profit, and position sizing.
 
-Signal generation logic:
-  1. AI ensemble confidence (XGB + LGBM + LSTM)
-  2. Math model agreement score (Ichimoku, Supertrend, PSAR, HMA, Pivots, etc.)
-  3. Combined confidence = 60% AI + 40% math models
-  4. Filter by minimum R/R ratio before emitting
-  5. Position size using half-Kelly fraction
-
-Stop-loss rules (tightest wins):
-  - ATR-based: entry - ATR_SL_MULT * ATR14
-  - Support-based: just below nearest pivot S1 or Fibonacci level
-  
-Take-profit rules (nearest significant level):
-  - ATR-based: entry + ATR_TP_MULT * ATR14
-  - Resistance-based: nearest pivot R1, R2, or Fibonacci extension
+Signal generation logic (v2):
+  1. AI ensemble probability is the PRIMARY signal source.
+     - AI prob > 0.55 → bullish lean
+     - AI prob < 0.45 → bearish lean
+     - 0.45–0.55 → genuinely uncertain
+  2. Math model agreement ADJUSTS confidence up/down (bonus/penalty)
+     but does NOT veto the AI signal alone.
+  3. Final signal threshold: 0.55 AI-weighted confidence (was 0.65)
+  4. HOLD only when AI is genuinely uncertain (near 0.5) AND math models
+     are also mixed. Not when one side is clearly stronger.
+  5. Portfolio analysis: per-position CUT LOSS / HOLD / ADD recommendation
+     based on AI signal + unrealised P&L + distance to stop-loss.
 """
 
 import json
@@ -33,12 +31,16 @@ import config
 logger = logging.getLogger("trade_signals")
 
 # ── Signal Parameters ──────────────────────────────────────────────────────────
-MIN_CONFIDENCE    = 0.65    # Below this → HOLD (no trade)
+MIN_AI_CONFIDENCE = 0.52    # AI prob must deviate from 0.5 by at least this
+                             # 0.52 = fires when AI is 54%+ confident either way
 MIN_RR_RATIO      = 1.5     # Below this R/R → suppress signal
 ATR_SL_MULTIPLIER = 1.5     # Stop-loss = entry - ATR_SL_MULT * ATR14
 ATR_TP_MULTIPLIER = 3.0     # Take-profit = entry + ATR_TP_MULT * ATR14
 MAX_POSITION_PCT  = 0.15    # Max 15% of capital per position
 KELLY_FRACTION    = 0.25    # Conservative quarter-Kelly sizing
+
+# Keep old name as alias for backwards compatibility
+MIN_CONFIDENCE = MIN_AI_CONFIDENCE
 
 
 @dataclass
@@ -160,6 +162,20 @@ def generate_signal(
 
     atr14 = _compute_atr(high, low, close, n=14)
 
+    # ── Detect vnstock thousands-VND unit (e.g. SHS=15 means 15,000 VND) ─
+    # If ATR < 0.5% of price, data is almost certainly in thousands of VND.
+    # Scale everything up by 1000 so SL/TP/entry are in actual VND.
+    price_scale = 1.0
+    if last_close > 0 and atr14 > 0:
+        atr_pct = atr14 / last_close
+        if atr_pct < 0.002:          # ATR < 0.2% of price → thousands unit
+            price_scale = 1000.0
+            last_close *= price_scale
+            atr14      *= price_scale
+            high   = high  * price_scale
+            low    = low   * price_scale
+            close  = close * price_scale
+
     # ── Math model agreement score ─────────────────────────────────────────
     if math_votes:
         vote_values = list(math_votes.values())
@@ -167,27 +183,37 @@ def generate_signal(
         bear_votes  = sum(1 for v in vote_values if v < 0)
         total_votes = len(vote_values)
         math_score  = (bull_votes - bear_votes) / total_votes if total_votes > 0 else 0.0
-        math_agreement = (math_score + 1) / 2   # normalise to [0, 1]
     else:
         math_score = 0.0
-        math_agreement = 0.5
 
-    # ── Combined confidence ────────────────────────────────────────────────
-    combined_conf = 0.60 * ai_confidence + 0.40 * math_agreement
+    # ── Direction: AI is the primary source ───────────────────────────────
+    # AI probability directly encodes the predicted direction and strength.
+    # Math models provide a secondary confirmation bonus/penalty.
+    ai_direction   = 1  if ai_confidence >= 0.5 else -1
+    math_direction = 1  if math_score    >= 0   else -1
 
-    # ── Direction determination ────────────────────────────────────────────
-    # AI says UP if ai_confidence > 0.5, DOWN if < 0.5
-    ai_direction   = 1 if ai_confidence >= 0.5 else -1
-    math_direction = 1 if math_score >= 0 else -1
-    direction      = 1 if (ai_direction + math_direction) >= 0 else -1
+    # AI deviation from 0.5 = how strongly the model believes in its direction
+    ai_strength = abs(ai_confidence - 0.5)   # 0 = uncertain, 0.5 = very confident
 
-    # ── Signal classification ──────────────────────────────────────────────
-    pivot_row = math_df.iloc[-1]
-    above_ma200 = float(pivot_row.get("price_vs_hma20", 0)) > -0.05  # within 5% below HMA-20
+    # Math bonus: +0.05 if math agrees, -0.03 if math disagrees
+    # Small adjustment — AI does the heavy lifting
+    if math_direction == ai_direction:
+        math_bonus = 0.05 * abs(math_score)   # max +0.05
+    else:
+        math_bonus = -0.03 * abs(math_score)  # max -0.03
 
-    if combined_conf >= MIN_CONFIDENCE and direction == 1:
+    # Combined confidence: centered on AI strength, adjusted by math
+    combined_conf = 0.5 + ai_strength + math_bonus
+    combined_conf = float(np.clip(combined_conf, 0.0, 1.0))
+
+    # Direction is whatever AI says — math can't flip it, only nudge confidence
+    direction = ai_direction
+
+    # ── Signal classification ─────────────────────────────────────────────
+    # HOLD only when AI is genuinely near 50/50 (strength < threshold)
+    if ai_strength >= (MIN_AI_CONFIDENCE - 0.5) and direction == 1:
         raw_signal = "BUY"
-    elif combined_conf >= MIN_CONFIDENCE and direction == -1:
+    elif ai_strength >= (MIN_AI_CONFIDENCE - 0.5) and direction == -1:
         raw_signal = "SELL"
     else:
         raw_signal = "HOLD"
@@ -279,9 +305,11 @@ def generate_signal(
     basis = " | ".join(basis_parts) if basis_parts else "Insufficient signal"
 
     # ── Pivot levels for display ──────────────────────────────────────────
-    pp = float(pivot_row.get("pivot_pp", 0))
-    s1 = float(pivot_row.get("pivot_s1", 0))
-    r1 = float(pivot_row.get("pivot_r1", 0))
+    # pivot_row = last row of math_df (safe access)
+    pivot_row = math_df.iloc[-1] if not math_df.empty else pd.Series(dtype=float)
+    pp = float(pivot_row.get("pivot_pp", 0) or 0)
+    s1 = float(pivot_row.get("pivot_s1", 0) or 0)
+    r1 = float(pivot_row.get("pivot_r1", 0) or 0)
 
     return TradeSignal(
         symbol=symbol,

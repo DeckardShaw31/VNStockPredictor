@@ -28,7 +28,6 @@ DEFAULT_SYMBOLS: List[str] = [
     "FPT",   # FPT Corp         – Technology
     "MWG",   # Mobile World     – Retail
     "MSN",   # Masan Group      – Consumer
-    "TCB",   # Techcombank      – Banking
     "SSI",   # SSI Securities   – Finance
     "GAS",   # PV Gas           – Energy
     "PLX",   # Petrolimex       – Energy
@@ -37,7 +36,8 @@ DEFAULT_SYMBOLS: List[str] = [
     "HPA",   # HPA              – New listing (adaptive short-history training)
     "SHS",   # SHS Securities   – Finance
     "VGI",   # Viettel Global   – Telecom
-
+    "GEX",   # Gelex            – Conglomerate  
+    "MSB",   # MSB              – Banking
 ]
 
 # ── Data Config ────────────────────────────────────────────────────────────────
