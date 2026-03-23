@@ -1,0 +1,67 @@
+{
+  "VNM": {
+    "symbol": "VNM",
+    "n_predictions": 613,
+    "n_trades": 295,
+    "auc": 0.5780544445877952,
+    "accuracy": 0.5464926590538336,
+    "win_rate": 0.5050847457627119,
+    "strategy_return_pct": 15.197021260055438,
+    "buy_hold_return_pct": 7.296137339055786,
+    "sharpe_ratio": 1.9991630883991076,
+    "max_drawdown_pct": -3.275072955573762,
+    "final_capital": 115197021.26005544
+  },
+  "VIC": {
+    "symbol": "VIC",
+    "n_predictions": 612,
+    "n_trades": 297,
+    "auc": 0.5088135883284132,
+    "accuracy": 0.4950980392156863,
+    "win_rate": 0.5117845117845118,
+    "strategy_return_pct": 24.726430565900177,
+    "buy_hold_return_pct": 238.34586466165413,
+    "sharpe_ratio": 1.4487365963059045,
+    "max_drawdown_pct": -10.221801620165936,
+    "final_capital": 124726430.56590018
+  },
+  "HPG": {
+    "symbol": "HPG",
+    "n_predictions": 613,
+    "n_trades": 244,
+    "auc": 0.6403611507421052,
+    "accuracy": 0.6166394779771615,
+    "win_rate": 0.639344262295082,
+    "strategy_return_pct": 30.366463199906903,
+    "buy_hold_return_pct": 8.096828046744564,
+    "sharpe_ratio": 2.6767520371482387,
+    "max_drawdown_pct": -6.014579015480968,
+    "final_capital": 130366463.1999069
+  },
+  "VCB": {
+    "symbol": "VCB",
+    "n_predictions": 613,
+    "n_trades": 168,
+    "auc": 0.625832108584767,
+    "accuracy": 0.600326264274062,
+    "win_rate": 0.5952380952380952,
+    "strategy_return_pct": 16.64808779488568,
+    "buy_hold_return_pct": 29.899216125419947,
+    "sharpe_ratio": 2.536427604970712,
+    "max_drawdown_pct": -2.0663113188026228,
+    "final_capital": 116648087.79488568
+  },
+  "FPT": {
+    "symbol": "FPT",
+    "n_predictions": 613,
+    "n_trades": 338,
+    "auc": 0.4467901628872565,
+    "accuracy": 0.45840130505709625,
+    "win_rate": 0.45857988165680474,
+    "strategy_return_pct": 0.8400715355623364,
+    "buy_hold_return_pct": 46.67715296893431,
+    "sharpe_ratio": 0.09313457485544654,
+    "max_drawdown_pct": -19.393348788564488,
+    "final_capital": 100840071.53556234
+  }
+}

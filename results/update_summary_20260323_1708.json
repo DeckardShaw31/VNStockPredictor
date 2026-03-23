@@ -1,0 +1,107 @@
+{
+  "VNM": {
+    "new_rows": 3336,
+    "total_rows": 3336,
+    "val_auc": 0.6196142930856554,
+    "val_acc": 0.542,
+    "last_date": "2026-03-23"
+  },
+  "VIC": {
+    "new_rows": 3336,
+    "total_rows": 3336,
+    "val_auc": 0.4141720779220779,
+    "val_acc": 0.44,
+    "last_date": "2026-03-23"
+  },
+  "HPG": {
+    "new_rows": 3288,
+    "total_rows": 3288,
+    "val_auc": 0.5052525851281038,
+    "val_acc": 0.5172413793103449,
+    "last_date": "2026-03-23"
+  },
+  "VCB": {
+    "new_rows": 3359,
+    "total_rows": 3359,
+    "val_auc": 0.5477425800006446,
+    "val_acc": 0.5268389662027833,
+    "last_date": "2026-03-23"
+  },
+  "FPT": {
+    "new_rows": 3358,
+    "total_rows": 3358,
+    "val_auc": 0.48297233201581025,
+    "val_acc": 0.4731610337972167,
+    "last_date": "2026-03-23"
+  },
+  "MWG": {
+    "new_rows": 2625,
+    "total_rows": 2625,
+    "val_auc": 0.541148424543947,
+    "val_acc": 0.5216284987277354,
+    "last_date": "2026-03-23"
+  },
+  "MSN": {
+    "new_rows": 3319,
+    "total_rows": 3319,
+    "val_auc": 0.5511578947368421,
+    "val_acc": 0.5050301810865191,
+    "last_date": "2026-03-23"
+  },
+  "TCB": {
+    "new_rows": 1717,
+    "total_rows": 1717,
+    "val_auc": 0.5292858889704084,
+    "val_acc": 0.49416342412451364,
+    "last_date": "2026-03-23"
+  },
+  "SSI": {
+    "new_rows": 3359,
+    "total_rows": 3359,
+    "val_auc": 0.5953248234138925,
+    "val_acc": 0.5308151093439364,
+    "last_date": "2026-03-23"
+  },
+  "GAS": {
+    "new_rows": 3165,
+    "total_rows": 3165,
+    "val_auc": 0.501278265879303,
+    "val_acc": 0.5,
+    "last_date": "2026-03-23"
+  },
+  "PLX": {
+    "new_rows": 1984,
+    "total_rows": 1984,
+    "val_auc": 0.4975045372050817,
+    "val_acc": 0.5521885521885522,
+    "last_date": "2026-03-23"
+  },
+  "SAB": {
+    "new_rows": 2069,
+    "total_rows": 2069,
+    "val_auc": 0.5543478260869564,
+    "val_acc": 0.6,
+    "last_date": "2026-03-23"
+  },
+  "VHM": {
+    "new_rows": 1888,
+    "total_rows": 1888,
+    "val_auc": 0.5446464443551627,
+    "val_acc": 0.4558303886925795,
+    "last_date": "2026-03-23"
+  },
+  "SHS": {
+    "new_rows": 3339,
+    "total_rows": 3339,
+    "val_auc": 0.5291337573495251,
+    "val_acc": 0.536,
+    "last_date": "2026-03-23"
+  },
+  "VGI": {
+    "new_rows": 1660,
+    "total_rows": 1660,
+    "val_auc": 0.618884729572738,
+    "val_acc": 0.5943775100401606,
+    "last_date": "2026-03-23"
+  }
+}

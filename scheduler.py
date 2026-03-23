@@ -39,7 +39,7 @@ VN_TZ = config.VIETNAM_TZ
 # ── Job Functions ──────────────────────────────────────────────────────────────
 
 def retrain_job(symbols=None, horizon=config.PREDICTION_HORIZON):
-    """Full retrain + Optuna tune. Called after market close."""
+    """Full retrain + Optuna tune. Called weekly or on-demand."""
     logger.info("=" * 60)
     logger.info(f"[RETRAIN JOB] Starting | {datetime.now(VN_TZ).isoformat()}")
     try:
@@ -49,6 +49,19 @@ def retrain_job(symbols=None, horizon=config.PREDICTION_HORIZON):
         logger.info(f"[RETRAIN JOB] Complete | {n_ok}/{len(summary)} models updated")
     except Exception as e:
         logger.error(f"[RETRAIN JOB] FAILED: {e}", exc_info=True)
+
+
+def update_job(symbols=None, horizon=config.PREDICTION_HORIZON):
+    """Fast incremental update after each market close — no Optuna, ~30s per symbol."""
+    logger.info(f"[UPDATE JOB] Starting incremental update | {datetime.now(VN_TZ).isoformat()}")
+    try:
+        from updater import IncrementalUpdater
+        updater = IncrementalUpdater(symbols=symbols, horizon=horizon)
+        summary = updater.run()
+        ok  = sum(1 for v in summary.values() if "error" not in v)
+        logger.info(f"[UPDATE JOB] Complete | {ok}/{len(summary)} symbols updated")
+    except Exception as e:
+        logger.error(f"[UPDATE JOB] FAILED: {e}", exc_info=True)
 
 
 def predict_job(symbols=None, horizon=config.PREDICTION_HORIZON):
@@ -174,21 +187,39 @@ class DailyScheduler:
             misfire_grace_time=300,
         )
 
-        # 3. Post-market retrain at 15:00 ICT Mon-Fri
+        # 3. Post-market FAST UPDATE at 15:05 ICT Mon-Fri
+        #    Ingests today's new close, refits models in ~30s per symbol
+        #    Uses saved hyperparameters — no Optuna needed
         self._add_job(
-            retrain_job,
+            update_job,
             cron_kwargs={
                 "day_of_week": "mon-fri",
                 "hour": config.RETRAIN_HOUR,
-                "minute": config.RETRAIN_MINUTE,
+                "minute": config.RETRAIN_MINUTE + 5,   # 15:05 ICT
             },
-            job_id="retrain_daily",
-            job_name="Daily retrain + tune",
+            job_id="update_daily",
+            job_name="Daily fast update (no Optuna)",
             job_kwargs={"symbols": self.symbols, "horizon": self.horizon},
             misfire_grace_time=1800,
         )
 
-        # 4. Hourly health check
+        # 4. Weekly FULL RETRAIN on Friday at 15:30 ICT
+        #    Runs Optuna to re-tune hyperparameters on the expanded dataset
+        #    ~30-60 min per symbol — runs in background after update
+        self._add_job(
+            retrain_job,
+            cron_kwargs={
+                "day_of_week": "fri",
+                "hour": config.RETRAIN_HOUR,
+                "minute": config.RETRAIN_MINUTE + 30,   # 15:30 ICT Friday
+            },
+            job_id="retrain_weekly",
+            job_name="Weekly full retrain + Optuna",
+            job_kwargs={"symbols": self.symbols, "horizon": self.horizon},
+            misfire_grace_time=3600,
+        )
+
+        # 5. Hourly health check
         self._add_job(
             health_check_job,
             cron_kwargs={"minute": 0},

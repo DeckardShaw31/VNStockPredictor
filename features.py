@@ -680,11 +680,15 @@ def build_features(
     df = add_calendar_features(df)
     df = add_market_relative(df, vnindex)
 
-    # ── Labels ──────────────────────────────────────────────────────────────
+    # ── Labels — build all at once with pd.concat to avoid DataFrame fragmentation ─
+    label_cols = {}
     for h in [1, 3, 5, 10]:
         fwd_ret = df["close"].pct_change(h).shift(-h)
-        df[f"target_ret_{h}d"]  = fwd_ret
-        df[f"target_dir_{h}d"]  = (fwd_ret > 0).astype(int)   # binary up/down
+        label_cols[f"target_ret_{h}d"] = fwd_ret
+        label_cols[f"target_dir_{h}d"] = (fwd_ret > 0).astype(int)
+
+    df = pd.concat([df, pd.DataFrame(label_cols, index=df.index)], axis=1)
+    df = df.copy()   # defragment the internal block structure
 
     # Drop raw OHLCV except close (not features per se)
     drop_cols = [c for c in ["open", "high", "low", "volume"] if c in df.columns]

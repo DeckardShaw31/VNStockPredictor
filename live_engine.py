@@ -160,14 +160,16 @@ class LiveTradingEngine:
         if not feat_cols:
             return None
 
-        # Build features (with intraday update)
+        # Build features — try extended signature, fall back to basic for older features.py
         from features import build_features, get_feature_cols
         try:
             feat_df = build_features(
                 ohlcv, self._vnindex,
                 symbol=sym,
-                use_vol_adjusted_labels=False,   # no labels needed for inference
+                use_vol_adjusted_labels=False,
             )
+        except TypeError:
+            feat_df = build_features(ohlcv, self._vnindex)
         except Exception as e:
             logger.warning(f"[live] Feature build failed for {sym}: {e}")
             return None

@@ -41,8 +41,8 @@ DEFAULT_SYMBOLS: List[str] = [
 ]
 
 # ── Data Config ────────────────────────────────────────────────────────────────
-LOOKBACK_DAYS       = 1300    # ~4 years of history for training
-FEATURE_WINDOW      = 60     # rolling window for sequence models (LSTM)
+LOOKBACK_DAYS       = 5000    # ~4 years of history for training
+FEATURE_WINDOW      = 250     # rolling window for sequence models (LSTM)
 CACHE_TTL_HOURS     = 6      # hours before re-fetching price data
 
 # ── Model Config ───────────────────────────────────────────────────────────────
@@ -88,10 +88,10 @@ LGBM_SEARCH_SPACE = {
 }
 
 # ── Optuna Tuning Config ───────────────────────────────────────────────────────
-OPTUNA_TRIALS_XGB  = 60
-OPTUNA_TRIALS_LGBM = 60
-OPTUNA_TRIALS_LSTM = 30     # LSTM is slow; keep this LOW (30 is plenty)
-OPTUNA_TIMEOUT_SEC = 1800   # 30 minutes max per model — hard ceiling
+OPTUNA_TRIALS_XGB  = 600
+OPTUNA_TRIALS_LGBM = 600
+OPTUNA_TRIALS_LSTM = 100     # LSTM is slow; keep this LOW (30 is plenty)
+OPTUNA_TIMEOUT_SEC = 18000   # 30 minutes max per model — hard ceiling
 
 # ── Ensemble Config ────────────────────────────────────────────────────────────
 # Final prediction = weighted average of model probabilities

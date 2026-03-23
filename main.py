@@ -40,7 +40,7 @@ def main():
     parser = argparse.ArgumentParser(description="Vietnam Stock AI Prediction System")
     parser.add_argument(
         "--mode",
-        choices=["train", "predict", "live", "daemon", "dashboard", "backtest"],
+        choices=["train", "predict", "live", "update", "daemon", "dashboard", "backtest"],
         default="dashboard",
         help="Execution mode",
     )
@@ -107,6 +107,14 @@ def main():
 
         if signals:
             save_signals(signals)
+
+    elif args.mode == "update":
+        from updater import IncrementalUpdater
+        updater = IncrementalUpdater(symbols=args.symbols, horizon=args.horizon)
+        summary = updater.run()
+        ok  = sum(1 for v in summary.values() if "error" not in v)
+        err = len(summary) - ok
+        logger.info(f"Update complete: {ok} symbols updated, {err} failed")
 
     elif args.mode == "live":
         from live_engine import LiveTradingEngine
