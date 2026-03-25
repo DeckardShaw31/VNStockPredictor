@@ -74,10 +74,12 @@ class TrainingPipeline:
         symbols: Optional[List[str]] = None,
         horizon: int = config.PREDICTION_HORIZON,
         tune: bool = True,
+        force_retrain_transformer: bool = False,
     ):
         self.symbols = symbols or config.DEFAULT_SYMBOLS
         self.horizon = horizon
         self.tune    = tune
+        self.force_retrain_transformer = force_retrain_transformer
 
     def run(self):
         logger.info(f"=== Training Pipeline | horizon={self.horizon}d | {len(self.symbols)} symbols ===")
@@ -87,6 +89,8 @@ class TrainingPipeline:
 
         # ── Stage 1: Pre-train the Pattern Transformer on full corpus ─────
         logger.info("=== Stage 1: Pattern Transformer Pre-training ===")
+        if self.force_retrain_transformer:
+            logger.info("  --retrain-transformer flag set: will rebuild from scratch")
         self._transformer_pipeline = None
         try:
             import torch
@@ -95,7 +99,8 @@ class TrainingPipeline:
             from transformer_pipeline import TransformerPipeline
             self._transformer_pipeline = TransformerPipeline(horizon=self.horizon)
             pretrain_auc = self._transformer_pipeline.pretrain(
-                data, tune=False
+                data, tune=False,
+                force_rebuild=self.force_retrain_transformer,
             )
             logger.info(f"Pattern Transformer pre-train AUC: {pretrain_auc:.4f}")
 

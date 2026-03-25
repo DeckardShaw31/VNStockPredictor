@@ -49,10 +49,10 @@ FINETUNED_MODEL_DIR     = Path(config.MODEL_DIR)
 TRANSFORMER_META_PATH   = Path(config.MODEL_DIR) / "transformer_meta.json"
 
 # Training config
-PRETRAIN_SEQ_LEN   = 60     # input sequence length (60 trading days = ~3 months)
-PRETRAIN_EPOCHS    = 50
+PRETRAIN_SEQ_LEN   = 1460     # input sequence length (60 trading days = ~3 months)
+PRETRAIN_EPOCHS    = 100
 PRETRAIN_BATCH     = 64
-FINETUNE_EPOCHS    = 20     # fewer epochs for fine-tuning (avoid overfitting)
+FINETUNE_EPOCHS    = 40     # fewer epochs for fine-tuning (avoid overfitting)
 FINETUNE_BATCH     = 16
 OPTUNA_TRIALS      = 20     # transformer Optuna trials (architecture search)
 

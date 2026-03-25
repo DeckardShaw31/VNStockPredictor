@@ -1,24 +1,31 @@
 # Vietnam Stock AI — Python Dependencies
-# Install with: pip install -r requirements.txt
+# Tested on Python 3.10, 3.11, 3.12, 3.13
+# Install: pip install -r requirements.txt
 
 # ── Data ──────────────────────────────────────────────────────────────────────
-vnstock>=3.0.0              # Primary Vietnam stock data source
+vnstock>=3.0.0              # Primary Vietnam stock data source (HOSE/HNX/UPCOM)
 yfinance>=0.2.36            # Fallback data source
 pandas>=2.0.0
 numpy>=1.24.0
+requests>=2.31.0
+python-dateutil>=2.9.0
 
 # ── ML ────────────────────────────────────────────────────────────────────────
 scikit-learn>=1.4.0
 xgboost>=2.0.0
 lightgbm>=4.3.0
-tensorflow>=2.15.0          # LSTM (use tensorflow-cpu for CPU-only servers)
-# tensorflow-cpu>=2.15.0    # Uncomment if no GPU
+
+# ── Deep Learning (PyTorch — Python 3.13 compatible, no TensorFlow needed) ───
+# CPU-only (works everywhere, no CUDA required):
+torch>=2.2.0
+# If you have a CUDA GPU, replace the line above with:
+# torch>=2.2.0+cu121  --index-url https://download.pytorch.org/whl/cu121
 
 # ── Hyperparameter Tuning ─────────────────────────────────────────────────────
 optuna>=3.6.0
 
 # ── Scheduling ────────────────────────────────────────────────────────────────
-APScheduler>=3.10.0
+APScheduler>=3.10.0,<4.0.0  # pin to 3.x — 4.x has breaking API changes
 pytz>=2024.1
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -27,5 +34,4 @@ plotly>=5.22.0
 
 # ── Utilities ─────────────────────────────────────────────────────────────────
 tqdm>=4.66.0
-python-dateutil>=2.9.0
-requests>=2.31.0
+openpyxl>=3.1.0            # Excel export

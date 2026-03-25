@@ -82,6 +82,12 @@ def _lgbm_objective(trial, X_tr, y_tr, X_val, y_val):
 def _lstm_objective(trial, X_tr, y_tr, X_val, y_val):
     from sklearn.metrics import roc_auc_score
 
+    # Sanitize before any model call — 184-col feature matrix may have NaN/inf
+    X_tr_c  = np.nan_to_num(X_tr,  nan=0.0, posinf=0.0, neginf=0.0)
+    X_val_c = np.nan_to_num(X_val, nan=0.0, posinf=0.0, neginf=0.0)
+    y_tr_c  = np.clip(np.asarray(y_tr,  dtype=np.float32), 0.0, 1.0)
+    y_val_c = np.clip(np.asarray(y_val, dtype=np.float32), 0.0, 1.0)
+
     sp = config.LSTM_SEARCH_SPACE
     params = {
         "units_1":      trial.suggest_int("units_1", *sp["units_1"]),
@@ -94,12 +100,12 @@ def _lstm_objective(trial, X_tr, y_tr, X_val, y_val):
 
     from models import LSTMModel
     mdl = LSTMModel(seq_len=30, params=params)
-    mdl.fit(X_tr, y_tr, X_val, y_val)
-    prob  = mdl.predict_proba(X_val)
+    mdl.fit(X_tr_c, y_tr_c, X_val_c, y_val_c)
+    prob  = mdl.predict_proba(X_val_c)
     valid = ~np.isnan(prob)
-    if valid.sum() < 5 or len(set(y_val[valid])) < 2:
+    if valid.sum() < 5 or len(set(y_val_c[valid])) < 2:
         return 0.5
-    return float(roc_auc_score(y_val[valid], prob[valid]))
+    return float(roc_auc_score(y_val_c[valid], prob[valid]))
 
 
 # ── Public Tuning Functions ────────────────────────────────────────────────────

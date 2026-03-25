@@ -221,6 +221,124 @@ def add_volume(df: pd.DataFrame, cap: int) -> pd.DataFrame:
     return df
 
 
+def add_high_importance_features(df: pd.DataFrame, cap: int) -> pd.DataFrame:
+    """
+    Features identified as high-importance from published research on 1-day horizon:
+
+    Top additions not previously in feature set:
+      yday_vol_log_ret   — log change of yesterday's volume  (#1 in chart)
+      yday_open_log_ret  — log return of yesterday's open
+      zscore_20          — price z-score vs 20-day window
+      skew_5d/10d        — rolling return skewness
+      abnormal_vol_20    — volume z-score (how unusual is today's volume)
+      overnight_gap      — today open vs yesterday close
+      kurt_10d           — kurtosis (tail risk)
+      momentum_20d_log   — log 20-day momentum (more important than 5d)
+      intraday_range_pct — (high-low)/open per bar
+    """
+    c = df["close"]
+    v = df["volume"]
+    o = df["open"]   if "open" in df.columns else c
+    h = df["high"]   if "high" in df.columns else c
+    l = df["low"]    if "low"  in df.columns else c
+
+    # Yesterday's OHLCV log returns
+    df["yday_vol_log_ret"]   = np.log((v / v.shift(1)).replace(0, np.nan))
+    df["yday_open_log_ret"]  = np.log((o / o.shift(1)).replace(0, np.nan))
+    df["yday_close_log_ret"] = np.log((c / c.shift(1)).replace(0, np.nan))
+    df["yday_high_log_ret"]  = np.log((h / h.shift(1)).replace(0, np.nan))
+    df["yday_low_log_ret"]   = np.log((l / l.shift(1)).replace(0, np.nan))
+
+    # Z-Score
+    for zw in [10, 20]:
+        n = _w(zw, cap)
+        rm = c.rolling(n).mean()
+        rs = c.rolling(n).std().replace(0, np.nan)
+        df[f"zscore_{zw}"] = (c - rm) / rs
+
+    # Return skewness
+    log_ret = np.log((c / c.shift(1)).replace(0, np.nan))
+    for sw in [5, 10, 20]:
+        n = _w(sw, cap)
+        if n >= 3:
+            df[f"skew_{sw}d"] = log_ret.rolling(n).skew()
+
+    # Kurtosis
+    for kw in [10, 20]:
+        n = _w(kw, cap)
+        if n >= 4:
+            df[f"kurt_{kw}d"] = log_ret.rolling(n).kurt()
+
+    # Abnormal volume (volume z-score)
+    for vw in [5, 10, 20]:
+        n = _w(vw, cap)
+        vm = v.rolling(n).mean()
+        vs = v.rolling(n).std().replace(0, np.nan)
+        df[f"abnormal_vol_{vw}"] = (v - vm) / vs
+
+    # Overnight gap
+    if "open" in df.columns:
+        df["overnight_gap"]     = (o - c.shift(1)) / c.shift(1).replace(0, np.nan)
+        df["overnight_gap_abs"] = df["overnight_gap"].abs()
+
+    # Volume log returns
+    df["vol_log_ret"]    = np.log((v / v.shift(1)).replace(0, np.nan))
+    df["vol_log_ret_5d"] = np.log((v / v.shift(5)).replace(0, np.nan))
+
+    # Momentum (log)
+    for mn in [5, 10, 20]:
+        if cap > mn:
+            df[f"mom_log_{mn}d"] = np.log((c / c.shift(mn)).replace(0, np.nan))
+
+    # Intraday range
+    if "high" in df.columns and "low" in df.columns and "open" in df.columns:
+        df["intraday_range_pct"] = (h - l) / o.replace(0, np.nan)
+        df["intraday_range_ema"] = df["intraday_range_pct"].ewm(
+            span=_w(10, cap), adjust=False).mean()
+
+    return df
+
+
+def add_insider_proxy(df: pd.DataFrame, cap: int) -> pd.DataFrame:
+    """
+    Insider trading proxy features for Vietnam stocks.
+
+    True insider data (SSC filings) requires scraping from
+    https://www.ssc.gov.vn or vnstock insider endpoints.
+    These are volume/price anomaly proxies that approximate
+    institutional accumulation and smart-money signals.
+
+    To use actual insider data: add columns insider_shares,
+    insider_buy_flag, insider_amount before calling build_features().
+    """
+    c = df["close"]
+    v = df["volume"]
+    h = df["high"] if "high" in df.columns else c
+    l = df["low"]  if "low"  in df.columns else c
+    cap_n = _w(20, cap)
+
+    # Volume z-score
+    vol_z  = (v - v.rolling(cap_n).mean()) / v.rolling(cap_n).std().replace(0, np.nan)
+    pr_abs = c.pct_change().abs()
+    pr_z   = (pr_abs - pr_abs.rolling(cap_n).mean()) / pr_abs.rolling(cap_n).std().replace(0, np.nan)
+
+    # High volume + low price volatility = accumulation
+    df["accum_signal"]    = (vol_z - pr_z).clip(-3, 3)
+    df["vol_surge_flag"]  = (vol_z > 2.0).astype(int)
+
+    # Directional volume ratio (smart money proxy)
+    up_v = v.where(c > c.shift(1), 0).rolling(_w(10, cap)).sum()
+    dn_v = v.where(c <= c.shift(1), 0).rolling(_w(10, cap)).sum()
+    df["smart_money_ratio"] = up_v / (up_v + dn_v).replace(0, np.nan)
+
+    # Chaikin A/D momentum
+    clv = ((c - l) - (h - c)) / (h - l).replace(0, np.nan)
+    ad  = (clv * v).fillna(0).cumsum()
+    df["ad_momentum"] = ad - ad.ewm(span=_w(10, cap), adjust=False).mean()
+
+    return df
+
+
 def add_candlestick_patterns(df: pd.DataFrame) -> pd.DataFrame:
     o = df["open"]; h = df["high"]; l = df["low"]; c = df["close"]
     body      = (c - o).abs()
@@ -659,43 +777,167 @@ def add_market_relative(df: pd.DataFrame, vnindex: Optional[pd.DataFrame]) -> pd
     return df
 
 
+def add_sector_features(
+    df: pd.DataFrame,
+    symbol: str,
+    sector_peers: Optional[dict] = None,   # {sym: ohlcv_df} for sector peers
+) -> pd.DataFrame:
+    """
+    Add sector-relative momentum features.
+    These help distinguish stock-specific moves from sector-wide trends.
+    """
+    if not sector_peers or len(sector_peers) < 2:
+        return df
+
+    # Compute sector median return (equal-weight)
+    peer_rets = []
+    for sym, peer_ohlcv in sector_peers.items():
+        if sym == symbol:
+            continue
+        r = peer_ohlcv["close"].pct_change(5).reindex(df.index)
+        if r.notna().sum() > 20:
+            peer_rets.append(r)
+
+    if not peer_rets:
+        return df
+
+    sector_ret_5d = pd.concat(peer_rets, axis=1).median(axis=1)
+    stock_ret_5d  = df["close"].pct_change(5)
+
+    # Stock return MINUS sector return = stock-specific alpha
+    extra = pd.DataFrame(index=df.index)
+    extra["sector_alpha_5d"]    = stock_ret_5d - sector_ret_5d
+    extra["sector_momentum_5d"] = sector_ret_5d   # sector tailwind/headwind
+    extra["sector_rel_strength"]= (stock_ret_5d / sector_ret_5d.replace(0, np.nan)).clip(-5, 5)
+
+    df = pd.concat([df, extra], axis=1)
+    return df
+
+
+def add_fear_greed_proxy(
+    df: pd.DataFrame,
+    vnindex: Optional[pd.DataFrame],
+    vn30: Optional[pd.DataFrame] = None,
+) -> pd.DataFrame:
+    """
+    Add a market fear/greed proxy using VN-Index and VN30 breadth signals.
+
+    Fear/greed in Vietnam is strongly driven by:
+    - VN-Index vs its 50-day MA (above = greed, below = fear)
+    - VN-Index 20-day RSI
+    - VN-Index 5d/20d return momentum
+    - Spread between VN30 and VN-Index (large-cap vs broad market divergence)
+    """
+    if vnindex is None:
+        return df
+
+    extra = {}
+    vn_c  = vnindex["close"].reindex(df.index)
+    vn_ma50 = vn_c.ewm(span=50, adjust=False).mean()
+
+    # Distance from MA50 (positive = greed zone)
+    extra["vn_ma50_dist"] = (vn_c - vn_ma50) / vn_ma50.replace(0, np.nan)
+
+    # VN-Index RSI as market sentiment
+    vn_delta = vn_c.diff()
+    vn_gain  = vn_delta.clip(lower=0).ewm(14).mean()
+    vn_loss  = (-vn_delta.clip(upper=0)).ewm(14).mean()
+    vn_rsi   = 100 - 100 / (1 + vn_gain / vn_loss.replace(0, np.nan))
+    extra["vn_rsi_14"]     = vn_rsi
+    extra["vn_rsi_overbought"] = (vn_rsi > 70).astype(int)
+    extra["vn_rsi_oversold"]   = (vn_rsi < 30).astype(int)
+
+    # VN-Index momentum at multiple horizons
+    for h in [5, 20, 60]:
+        extra[f"vn_ret_{h}d"] = vn_c.pct_change(h)
+
+    # Volatility regime on VN-Index (high vol = fear)
+    vn_vol_20 = vn_c.pct_change().rolling(20).std() * np.sqrt(252)
+    vn_vol_60 = vn_c.pct_change().rolling(60).std() * np.sqrt(252)
+    extra["vn_vol_regime"] = (vn_vol_20 > vn_vol_60).astype(int)
+    extra["vn_vol_ratio"]  = vn_vol_20 / vn_vol_60.replace(0, np.nan)
+
+    df = pd.concat([df, pd.DataFrame(extra, index=df.index)], axis=1)
+    return df
+
+
 # ── Main Entrypoint ────────────────────────────────────────────────────────────
 
 def build_features(
     df: pd.DataFrame,
     vnindex: Optional[pd.DataFrame] = None,
+    symbol: Optional[str] = None,
+    sector_peers: Optional[dict] = None,
+    sentiment_features: Optional[pd.DataFrame] = None,
+    use_vol_adjusted_labels: bool = False,
 ) -> pd.DataFrame:
     """
     Build full feature matrix.
     Input:  OHLCV DataFrame indexed by date
-    Output: DataFrame with 60+ feature columns + 'target_*' labels
+    Output: DataFrame with 80+ feature columns + 'target_*' labels
     """
     df = df.copy()
-    df = add_returns(df)
-    df = add_trend(df)
-    df = add_momentum(df)
-    df = add_volatility(df)
-    df = add_volume(df)
+    cap = len(df)
+    df = add_returns(df, cap)
+    df = add_trend(df, cap)
+    df = add_momentum(df, cap)
+    df = add_volatility(df, cap)
+    df = add_volume(df, cap)
+    df = add_high_importance_features(df, cap)
+    df = add_insider_proxy(df, cap)
     df = add_candlestick_patterns(df)
     df = add_calendar_features(df)
-    df = add_market_relative(df, vnindex)
+    df = add_market_relative(df, vnindex, cap)
+    df = add_fear_greed_proxy(df, vnindex)
 
-    # ── Labels — build all at once with pd.concat to avoid DataFrame fragmentation ─
+    if symbol and sector_peers:
+        df = add_sector_features(df, symbol, sector_peers)
+
+    if sentiment_features is not None and not sentiment_features.empty:
+        sent = sentiment_features.reindex(df.index)
+        sent_cols = {f"sent_{c}": sent[c] for c in sent.columns}
+        df = pd.concat([df, pd.DataFrame(sent_cols, index=df.index)], axis=1)
+
+    # ── Math model features ───────────────────────────────────────────────
+    try:
+        from math_models import build_math_model_features
+        if "open" in df.columns and "high" in df.columns:
+            math_df = build_math_model_features(
+                df["high"], df["low"], df["close"], df["open"]
+            )
+            # Drop columns already in df to avoid duplicates
+            new_cols = [c for c in math_df.columns if c not in df.columns]
+            if new_cols:
+                df = pd.concat([df, math_df[new_cols]], axis=1)
+    except Exception as e:
+        logger.debug(f"Math model features skipped: {e}")
+
+    # ── Labels ────────────────────────────────────────────────────────────
     label_cols = {}
     for h in [1, 3, 5, 10]:
         fwd_ret = df["close"].pct_change(h).shift(-h)
         label_cols[f"target_ret_{h}d"] = fwd_ret
-        label_cols[f"target_dir_{h}d"] = (fwd_ret > 0).astype(int)
+
+        if use_vol_adjusted_labels and len(df) >= 25:
+            try:
+                from target_engineering import make_volatility_adjusted_label
+                vol_label = make_volatility_adjusted_label(
+                    df["close"], horizon=h,
+                    vol_window=min(20, len(df) // 3),
+                    threshold_multiplier=0.3,
+                )
+                label_cols[f"target_dir_{h}d"] = vol_label
+            except Exception:
+                label_cols[f"target_dir_{h}d"] = (fwd_ret > 0).astype(int)
+        else:
+            label_cols[f"target_dir_{h}d"] = (fwd_ret > 0).astype(int)
 
     df = pd.concat([df, pd.DataFrame(label_cols, index=df.index)], axis=1)
-    df = df.copy()   # defragment the internal block structure
+    df = df.copy()   # defragment
 
-    # Drop raw OHLCV except close (not features per se)
     drop_cols = [c for c in ["open", "high", "low", "volume"] if c in df.columns]
     df = df.drop(columns=drop_cols)
-
-    # Drop any NaN rows (from rolling windows / target shift)
-    df = df.dropna()
+    df = df.dropna(how="all")
 
     logger.info(f"Feature matrix: {df.shape[0]} rows × {df.shape[1]} columns")
     return df

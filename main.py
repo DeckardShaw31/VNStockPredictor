@@ -14,6 +14,8 @@ import logging
 import io
 from pathlib import Path
 
+import config
+
 # ── Force UTF-8 output on Windows (fixes cp1252 UnicodeEncodeError) ───────────
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -53,14 +55,59 @@ def main():
     parser.add_argument(
         "--horizon",
         type=int,
-        default=5,
-        help="Prediction horizon in trading days (default: 5)",
+        default=None,   # None = read from config.PREDICTION_HORIZON
+        help="Prediction horizon in trading days. Defaults to config.PREDICTION_HORIZON.",
+    )
+    parser.add_argument(
+        "--retrain-transformer",
+        action="store_true",
+        default=False,
+        help="Force re-train the Pattern Transformer from scratch (ignores saved weights)",
+    )
+    parser.add_argument(
+        "--no-tune",
+        action="store_true",
+        default=False,
+        help="Skip Optuna tuning — use default hyperparameters (much faster)",
     )
     args = parser.parse_args()
 
+    # Resolve horizon: CLI arg takes priority, then config.PREDICTION_HORIZON
+    effective_horizon = args.horizon if args.horizon is not None else config.PREDICTION_HORIZON
+    if args.horizon is not None and args.horizon != config.PREDICTION_HORIZON:
+        logger.info(f"Horizon override: {effective_horizon}d (config default: {config.PREDICTION_HORIZON}d)")
+    else:
+        logger.info(f"Horizon: {effective_horizon}d (from config.PREDICTION_HORIZON)")
+
     if args.mode == "train":
         from pipeline import TrainingPipeline
-        pipeline = TrainingPipeline(symbols=args.symbols, horizon=args.horizon)
+
+        # ── Interactive: ask about transformer retraining ──────────────────
+        force_retrain_transformer = args.retrain_transformer
+
+        if not force_retrain_transformer:
+            from pathlib import Path
+            pretrained_exists = (
+                Path(f"{__import__('config').MODEL_DIR}/pretrained_transformer_weights.pt").exists()
+            )
+            if pretrained_exists:
+                print("\n" + "="*60)
+                print("  Pattern Transformer — saved weights found")
+                print("="*60)
+                answer = input("  Retrain transformer from scratch? [y/N]: ").strip().lower()
+                force_retrain_transformer = answer in ("y", "yes")
+                if force_retrain_transformer:
+                    print("  Will rebuild transformer from scratch.")
+                else:
+                    print("  Loading existing transformer weights (faster).")
+                print("="*60 + "\n")
+
+        pipeline = TrainingPipeline(
+            symbols=args.symbols,
+            horizon=effective_horizon,
+            tune=not args.no_tune,
+            force_retrain_transformer=force_retrain_transformer,
+        )
         pipeline.run()
 
     elif args.mode == "predict":
@@ -69,7 +116,7 @@ def main():
         from math_models import build_math_model_features, get_math_signal_votes
         from trade_signals import generate_signal, format_signal, save_signals
 
-        pipeline = PredictionPipeline(symbols=args.symbols, horizon=args.horizon)
+        pipeline = PredictionPipeline(symbols=args.symbols, horizon=effective_horizon)
         results  = pipeline.run()
 
         syms   = list(results.keys())
@@ -98,7 +145,7 @@ def main():
                         symbol=sym, ohlcv=ohlcvs[sym],
                         ai_confidence=pred["confidence"],
                         math_df=math_df, math_votes=math_votes,
-                        horizon=args.horizon, model_auc=pred.get("model_auc", 0),
+                        horizon=effective_horizon, model_auc=pred.get("model_auc", 0),
                     )
                     signals.append(sig)
                     logger.info(f"\n{format_signal(sig)}")
@@ -110,7 +157,7 @@ def main():
 
     elif args.mode == "update":
         from updater import IncrementalUpdater
-        updater = IncrementalUpdater(symbols=args.symbols, horizon=args.horizon)
+        updater = IncrementalUpdater(symbols=args.symbols, horizon=effective_horizon)
         summary = updater.run()
         ok  = sum(1 for v in summary.values() if "error" not in v)
         err = len(summary) - ok
@@ -118,17 +165,17 @@ def main():
 
     elif args.mode == "live":
         from live_engine import LiveTradingEngine
-        engine = LiveTradingEngine(symbols=args.symbols, horizon=args.horizon)
+        engine = LiveTradingEngine(symbols=args.symbols, horizon=effective_horizon)
         engine.run_until_close()
 
     elif args.mode == "daemon":
         from scheduler import DailyScheduler
-        sched = DailyScheduler(symbols=args.symbols, horizon=args.horizon)
+        sched = DailyScheduler(symbols=args.symbols, horizon=effective_horizon)
         sched.start()  # blocks forever
 
     elif args.mode == "backtest":
         from backtester import Backtester
-        bt = Backtester(symbols=args.symbols, horizon=args.horizon)
+        bt = Backtester(symbols=args.symbols, horizon=effective_horizon)
         report = bt.run()
         logger.info(f"\n{report}")
 

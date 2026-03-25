@@ -2,24 +2,21 @@
 config.py — Central configuration for the Vietnam Stock AI System
 """
 
-from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Dict, List
 import pytz
 
 # ── Market Config ─────────────────────────────────────────────────────────────
 VIETNAM_TZ = pytz.timezone("Asia/Ho_Chi_Minh")
 
-# HOSE market hours: 9:00–11:30, 13:00–14:45 ICT
-MARKET_OPEN_HOUR   = 9
-MARKET_OPEN_MINUTE = 0
-MARKET_CLOSE_HOUR  = 14
+MARKET_OPEN_HOUR    = 9
+MARKET_OPEN_MINUTE  = 0
+MARKET_CLOSE_HOUR   = 14
 MARKET_CLOSE_MINUTE = 45
 
-# Retrain triggers: after market close + 15-min buffer
 RETRAIN_HOUR   = 15
 RETRAIN_MINUTE = 0
 
-# ── Default Stock Universe ─────────────────────────────────────────────────────
+# ── Stock Universe ─────────────────────────────────────────────────────────────
 DEFAULT_SYMBOLS: List[str] = [
     "VNM",   # Vinamilk         – Consumer
     "VIC",   # Vingroup         – Conglomerate
@@ -37,41 +34,71 @@ DEFAULT_SYMBOLS: List[str] = [
     "SHS",   # SHS Securities   – Finance
     "VGI",   # Viettel Global   – Telecom
     "GEX",   # Gelex            – Conglomerate  
-    "MSB",   # MSB              – Banking
 ]
 
+# ── Sector Map ─────────────────────────────────────────────────────────────────
+# Used for sector-relative features, portfolio sector exposure, and heatmap
+SECTOR_MAP: Dict[str, str] = {
+    "VNM": "Consumer Staples",        # Vinamilk
+    "VIC": "Conglomerate",            # Vingroup
+    "HPG": "Materials",               # Hoa Phat (Steel)
+    "VCB": "Banking",                 # Vietcombank
+    "FPT": "Technology",              # FPT Corp
+    "MWG": "Consumer Discretionary",  # Mobile World (Retail)
+    "MSN": "Consumer Staples",        # Masan Group
+    "SSI": "Finance",                 # SSI Securities
+    "GAS": "Energy",                  # PV Gas
+    "PLX": "Energy",                  # Petrolimex
+    "SAB": "Consumer Staples",        # Sabeco (Beverages)
+    "VHM": "Real Estate",             # Vinhomes
+    "HPA": "Healthcare",              # HPA
+    "SHS": "Finance",                 # SHS Securities
+    "VGI": "Telecom",                 # Viettel Global
+    "GEX": "Conglomerate",            # Gelex
+}
+
+# ── Benchmark Tickers ─────────────────────────────────────────────────────────
+VNINDEX_SYMBOL = "VNINDEX"
+VN30_SYMBOL    = "VN30"      # Blue-chip index (fear/greed proxy)
+
 # ── Data Config ────────────────────────────────────────────────────────────────
-LOOKBACK_DAYS       = 5000    # ~4 years of history for training
-FEATURE_WINDOW      = 250     # rolling window for sequence models (LSTM)
-CACHE_TTL_HOURS     = 6      # hours before re-fetching price data
+LOOKBACK_DAYS       = 3650   # ~10 years
+FEATURE_WINDOW      = 600
+CACHE_TTL_HOURS     = 6
 
 # ── Model Config ───────────────────────────────────────────────────────────────
-PREDICTION_HORIZON  = 5      # days ahead to predict
-TEST_SPLIT_RATIO    = 0.15   # fraction of data held out for test
-VAL_SPLIT_RATIO     = 0.15   # fraction of training data used for validation
+PREDICTION_HORIZON  = 5
+TEST_SPLIT_RATIO    = 0.15
+VAL_SPLIT_RATIO     = 0.15
 RANDOM_SEED         = 42
+
+# Enable probability calibration (Platt scaling) after training
+CALIBRATE_PROBABILITIES = True
+
+# Enable stacking meta-learner (uses OOF predictions from base models)
+USE_STACKING = True
 
 # ── LSTM Hyperparameter Search Space ──────────────────────────────────────────
 LSTM_SEARCH_SPACE = {
-    "units_1":        (32, 256),
-    "units_2":        (16, 128),
-    "dropout":        (0.1, 0.5),
-    "learning_rate":  (1e-4, 1e-2),
-    "batch_size":     [16, 32, 64],
-    "epochs":         (20, 80),
+    "units_1":       (32, 256),
+    "units_2":       (16, 128),
+    "dropout":       (0.1, 0.5),
+    "learning_rate": (1e-4, 1e-2),
+    "batch_size":    [16, 32, 64],
+    "epochs":        (20, 80),
 }
 
 # ── XGBoost Hyperparameter Search Space ───────────────────────────────────────
 XGB_SEARCH_SPACE = {
-    "n_estimators":   (100, 800),
-    "max_depth":      (3, 10),
-    "learning_rate":  (0.01, 0.3),
-    "subsample":      (0.6, 1.0),
-    "colsample_bytree": (0.6, 1.0),
-    "min_child_weight": (1, 10),
-    "gamma":          (0.0, 1.0),
-    "reg_alpha":      (0.0, 2.0),
-    "reg_lambda":     (0.5, 5.0),
+    "n_estimators":    (100, 800),
+    "max_depth":       (3, 10),
+    "learning_rate":   (0.01, 0.3),
+    "subsample":       (0.6, 1.0),
+    "colsample_bytree":(0.6, 1.0),
+    "min_child_weight":(1, 10),
+    "gamma":           (0.0, 1.0),
+    "reg_alpha":       (0.0, 2.0),
+    "reg_lambda":      (0.5, 5.0),
 }
 
 # ── LightGBM Hyperparameter Search Space ──────────────────────────────────────
@@ -87,19 +114,33 @@ LGBM_SEARCH_SPACE = {
     "reg_lambda":       (0.0, 2.0),
 }
 
-# ── Optuna Tuning Config ───────────────────────────────────────────────────────
-OPTUNA_TRIALS_XGB  = 600
-OPTUNA_TRIALS_LGBM = 600
-OPTUNA_TRIALS_LSTM = 100     # LSTM is slow; keep this LOW (30 is plenty)
-OPTUNA_TIMEOUT_SEC = 18000   # 30 minutes max per model — hard ceiling
+# ── Optuna Config ──────────────────────────────────────────────────────────────
+OPTUNA_TRIALS_XGB  = 60
+OPTUNA_TRIALS_LGBM = 60
+OPTUNA_TRIALS_LSTM = 30
+OPTUNA_TIMEOUT_SEC = 1800
 
-# ── Ensemble Config ────────────────────────────────────────────────────────────
-# Final prediction = weighted average of model probabilities
+# ── Ensemble Weights (fallback if Optuna weight optimisation fails) ────────────
 ENSEMBLE_WEIGHTS = {
-    "xgb":  0.35,
+    "xgb":  0.30,
     "lgbm": 0.35,
-    "lstm": 0.30,
+    "lstm": 0.25,
+    "meta": 0.10,   # stacking meta-learner
 }
+
+# ── Risk Management ────────────────────────────────────────────────────────────
+MAX_SECTOR_EXPOSURE_PCT  = 0.35   # max 35% of portfolio in one sector
+MAX_SINGLE_POSITION_PCT  = 0.15   # max 15% in one stock
+VAR_CONFIDENCE_LEVEL     = 0.95   # 95% VaR
+VAR_LOOKBACK_DAYS        = 252    # 1 year for historical VaR
+
+# ── Signal Thresholds ─────────────────────────────────────────────────────────
+MIN_AI_CONFIDENCE    = 0.52   # AI probability must be >= this to fire BUY/SELL
+MIN_RR_RATIO         = 1.5    # Minimum risk/reward ratio
+ATR_SL_MULTIPLIER    = 1.5    # Stop-loss = entry - 1.5 × ATR
+ATR_TP_MULTIPLIER    = 3.0    # Take-profit = entry + 3.0 × ATR
+MAX_POSITION_PCT     = 0.15   # Max position size (Kelly-adjusted)
+KELLY_FRACTION       = 0.25   # Quarter-Kelly
 
 # ── File Paths ─────────────────────────────────────────────────────────────────
 DATA_CACHE_DIR  = "data/cache"

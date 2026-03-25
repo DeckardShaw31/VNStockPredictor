@@ -142,6 +142,7 @@ page = st.sidebar.radio("Navigation", [
     "📊 Market Overview",
     "🔍 Stock Analysis",
     "💼 Portfolio",
+    "⚠️ Risk Analytics",
     "🎯 Trade Signals",
     "⚙️ Train / Update",
     "📈 Backtest",
@@ -649,6 +650,208 @@ elif page == "💼 Portfolio":
 # PAGE: Trade Signals
 # ══════════════════════════════════════════════════════════════════════════════
 
+elif page == "⚠️ Risk Analytics":
+    st.title("⚠️ Risk Analytics")
+
+    from risk_manager import (
+        portfolio_var, correlation_matrix, sector_exposure, herfindahl_index
+    )
+
+    portfolio    = load_portfolio()
+    signals_raw  = _load_signals()
+
+    if not portfolio:
+        st.info("Add positions in the Portfolio tab first.")
+        st.stop()
+
+    syms_held = list(portfolio.keys())
+    with st.spinner("Loading price data..."):
+        ohlcv_data = {s: _fetch(s) for s in syms_held if not _fetch(s).empty}
+
+    # Build positions list for risk functions
+    sig_map   = {s["symbol"]: s for s in signals_raw}
+    from portfolio import compute_position_metrics
+    positions = []
+    for sym, lots in portfolio.items():
+        ohlcv = ohlcv_data.get(sym)
+        if ohlcv is None or ohlcv.empty: continue
+        cp = float(ohlcv["close"].iloc[-1])
+        pc = float(ohlcv["close"].iloc[-2]) if len(ohlcv) > 1 else cp
+        positions.append(compute_position_metrics(sym, lots, cp, pc, sig_map.get(sym)))
+
+    if not positions:
+        st.warning("No valid position data available.")
+        st.stop()
+
+    # ── VaR metrics ────────────────────────────────────────────────────────
+    st.markdown("### Portfolio Value-at-Risk")
+    var_data = portfolio_var(positions, ohlcv_data)
+
+    if var_data:
+        v1, v2, v3, v4, v5 = st.columns(5)
+        v1.metric("VaR (1-day, 95%)",  f"{var_data.get('var_1d_pct',0):.2f}%",
+                  help="5% chance of losing more than this in a single day")
+        v2.metric("VaR (5-day, 95%)",  f"{var_data.get('var_5d_pct',0):.2f}%")
+        v3.metric("CVaR (Expected Loss)", f"{var_data.get('cvar_1d_pct',0):.2f}%" if var_data.get('cvar_1d_pct') else "N/A",
+                  help="Average loss when VaR is breached")
+        v4.metric("Ann. Volatility",   f"{var_data.get('portfolio_vol',0):.1f}%")
+        v5.metric("Sharpe Ratio",      f"{var_data.get('sharpe_ratio',0):.2f}")
+
+        total_value = sum(p["current_value"] for p in positions)
+        var_vnd = total_value * var_data.get("var_1d_pct", 0) / 100
+        st.caption(
+            f"Based on {var_data.get('n_days_history',0)} days of history. "
+            f"VaR in VND: **{var_vnd/1e6:.1f}M** per day at 95% confidence. "
+            f"Max historical drawdown: **{var_data.get('max_drawdown',0):.1f}%**"
+        )
+
+        # VaR gauge
+        var_val = var_data.get("var_1d_pct", 0)
+        gauge_color = "#ff4560" if var_val > 3 else ("#f6ad55" if var_val > 1.5 else "#00c896")
+        fig_gauge = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=var_val,
+            title={"text": "Daily VaR %", "font": {"size": 14}},
+            gauge={
+                "axis": {"range": [0, 6]},
+                "bar":  {"color": gauge_color},
+                "steps": [
+                    {"range": [0, 1.5], "color": "#162032"},
+                    {"range": [1.5, 3], "color": "#1a2a1a"},
+                    {"range": [3, 6],   "color": "#2a1a1a"},
+                ],
+                "threshold": {"line": {"color": "#ff4560", "width": 3}, "value": 3},
+            },
+            number={"suffix": "%", "font": {"size": 20}},
+        ))
+        fig_gauge.update_layout(**DARK, height=250, margin=dict(l=20,r=20,t=40,b=20))
+        st.plotly_chart(fig_gauge, use_container_width=True)
+
+    st.markdown("---")
+
+    # ── Concentration ──────────────────────────────────────────────────────
+    col_hhi, col_sector = st.columns(2)
+
+    with col_hhi:
+        st.markdown("### Concentration (HHI)")
+        hhi = herfindahl_index(positions)
+        if hhi < 0.15:
+            hhi_label, hhi_color = "Well Diversified", "#00c896"
+        elif hhi < 0.25:
+            hhi_label, hhi_color = "Moderate", "#f6ad55"
+        else:
+            hhi_label, hhi_color = "Concentrated", "#ff4560"
+        st.metric("Herfindahl Index", f"{hhi:.3f}", hhi_label)
+        st.caption("< 0.15 = diversified | 0.15–0.25 = moderate | > 0.25 = concentrated")
+
+        # Position weight bars
+        total_val = sum(p["current_value"] for p in positions)
+        for pos in sorted(positions, key=lambda x: -x["current_value"]):
+            w = pos["current_value"] / total_val * 100 if total_val > 0 else 0
+            col = "#ff4560" if w > 20 else "#f6ad55" if w > 15 else "#00c896"
+            st.markdown(
+                f"**{pos['symbol']}** "
+                f'<span style="color:{col}">{w:.1f}%</span>',
+                unsafe_allow_html=True
+            )
+
+    with col_sector:
+        st.markdown("### Sector Exposure")
+        sec_df = sector_exposure(positions)
+        if not sec_df.empty:
+            colors = ["#ff4560" if r else "#00c896" for r in sec_df["At Limit"]]
+            fig_sec = go.Figure(go.Bar(
+                x=sec_df["Weight %"], y=sec_df["Sector"],
+                orientation="h", marker_color=colors,
+                text=[f"{w:.1f}%" for w in sec_df["Weight %"]],
+                textposition="outside",
+            ))
+            fig_sec.add_vline(x=config.MAX_SECTOR_EXPOSURE_PCT * 100,
+                              line_dash="dash", line_color="#f6ad55",
+                              annotation_text="Limit")
+            fig_sec.update_layout(**DARK, height=max(200, len(sec_df)*40),
+                margin=dict(l=0,r=60,t=20,b=0), xaxis=dict(range=[0, 55]))
+            st.plotly_chart(fig_sec, use_container_width=True)
+
+    st.markdown("---")
+
+    # ── Correlation matrix ─────────────────────────────────────────────────
+    st.markdown("### Position Correlation Matrix (120-day)")
+    st.caption("Values near 1.0 = highly correlated bets. Consider diversifying if >0.8.")
+
+    corr = correlation_matrix(syms_held, ohlcv_data)
+    if not corr.empty and len(corr) > 1:
+        fig_corr = go.Figure(go.Heatmap(
+            z=corr.values,
+            x=corr.columns.tolist(),
+            y=corr.index.tolist(),
+            colorscale=[
+                [0.0,  "#ff4560"],
+                [0.5,  "#1a2332"],
+                [1.0,  "#00c896"],
+            ],
+            zmin=-1, zmax=1,
+            text=corr.round(2).values,
+            texttemplate="%{text}",
+            showscale=True,
+        ))
+        fig_corr.update_layout(**DARK, height=max(300, len(corr)*50),
+            margin=dict(l=0,r=0,t=20,b=0))
+        st.plotly_chart(fig_corr, use_container_width=True)
+
+        # Highlight high correlations
+        high_corr = []
+        for i in range(len(corr)):
+            for j in range(i+1, len(corr)):
+                val = corr.iloc[i, j]
+                if val > 0.80:
+                    high_corr.append((corr.index[i], corr.columns[j], val))
+        if high_corr:
+            st.warning(
+                "⚠️ High correlation pairs (>0.80): " +
+                ", ".join(f"{a}/{b} ({v:.2f})" for a,b,v in high_corr)
+            )
+
+    # ── Sector performance heatmap (all tracked stocks) ────────────────────
+    st.markdown("---")
+    st.markdown("### Market Sector Heatmap (1-week performance)")
+
+    preds = _load_predictions()
+    if preds:
+        from config import SECTOR_MAP
+        sector_rows = []
+        for sym, p in preds.items():
+            sector = SECTOR_MAP.get(sym, "Other")
+            ohlcv  = _fetch(sym)
+            if ohlcv.empty: continue
+            last    = float(ohlcv["close"].iloc[-1])
+            ret_1w  = float(ohlcv["close"].pct_change(5).iloc[-1]) * 100 if len(ohlcv) > 5 else 0
+            sector_rows.append({
+                "Symbol": sym, "Sector": sector,
+                "1W %": round(ret_1w, 2),
+                "AI": p.get("direction", 0),
+            })
+
+        if sector_rows:
+            heat_df = pd.DataFrame(sector_rows).sort_values("Sector")
+            colors = [
+                "#00c896" if r > 1 else
+                "#f6ad55" if r > -1 else
+                "#ff4560"
+                for r in heat_df["1W %"]
+            ]
+            fig_heat = go.Figure(go.Bar(
+                x=heat_df["Symbol"], y=heat_df["1W %"],
+                marker_color=colors,
+                text=[f"{r:+.1f}%" for r in heat_df["1W %"]],
+                textposition="outside",
+            ))
+            fig_heat.add_hline(y=0, line_color="#555", line_width=1)
+            fig_heat.update_layout(**DARK, height=350, yaxis_title="1-Week Return %",
+                margin=dict(l=0,r=0,t=20,b=0))
+            st.plotly_chart(fig_heat, use_container_width=True)
+
+
 elif page == "🎯 Trade Signals":
     st.title("🎯 Trade Signals")
 
@@ -718,15 +921,12 @@ elif page == "🎯 Trade Signals":
 elif page == "⚙️ Train / Update":
     st.title("⚙️ Train & Update Models")
 
-    tab_update, tab_train, tab_predict = st.tabs(
-        ["⚡ Quick Update", "🧠 Full Train", "🔮 Predict"])
+    tab_update, tab_train, tab_predict, tab_export, tab_notify = st.tabs(
+        ["⚡ Quick Update", "🧠 Full Train", "🔮 Predict", "📥 Export", "🔔 Notifications"])
 
     with tab_update:
         st.markdown("### Fast Incremental Update")
-        st.info(
-            "**~30 seconds per symbol.** Ingests today's new close, refits models "
-            "using saved hyperparameters. Run this every day after 15:00 ICT."
-        )
+        st.info("**~30 seconds per symbol.** Ingests today's close, refits with saved hyperparameters.")
         if st.button("⚡ Run Update Now", type="primary"):
             from updater import IncrementalUpdater
             with st.spinner("Updating models with today's data..."):
@@ -735,14 +935,15 @@ elif page == "⚙️ Train / Update":
                         symbols=symbols_input or config.DEFAULT_SYMBOLS,
                         horizon=horizon)
                     summary = u.run()
-                    st.success(f"Updated {sum(1 for v in summary.values() if 'error' not in v)} symbols.")
+                    ok = sum(1 for v in summary.values() if "error" not in v)
+                    st.success(f"Updated {ok} symbols.")
                     st.json(summary)
                 except Exception as e:
                     st.error(f"Update failed: {e}")
 
     with tab_train:
         st.markdown("### Full Retrain + Optuna Tuning")
-        st.warning("**30–60 min per symbol.** Runs Optuna hyperparameter search. Use weekly.")
+        st.warning("**30–60 min per symbol.** Use weekly.")
         tune_cb = st.checkbox("Enable Optuna tuning", value=True)
         if st.button("🚀 Start Full Training", type="primary"):
             from pipeline import TrainingPipeline
@@ -768,9 +969,93 @@ elif page == "⚙️ Train / Update":
                         horizon=horizon)
                     r = p.run()
                     st.success(f"Predictions generated for {len(r)} symbols.")
-                    st.json(r)
                 except Exception as e:
                     st.error(f"Prediction failed: {e}")
+
+    with tab_export:
+        st.markdown("### Export Reports")
+        st.markdown("Export current signals, portfolio, and model metrics to Excel.")
+
+        col_a, col_b = st.columns(2)
+        with col_a:
+            if st.button("📊 Export Full Excel Report", type="primary"):
+                from exporter import export_full_report
+                from portfolio import load_portfolio, build_portfolio_report
+                from risk_manager import portfolio_var, sector_exposure, correlation_matrix
+                try:
+                    port     = load_portfolio()
+                    syms_h   = list(port.keys())
+                    ohlcv_d  = {s: _fetch(s) for s in syms_h if not _fetch(s).empty}
+                    sigs     = _load_signals()
+                    pos, _   = build_portfolio_report(ohlcv_d, sigs)
+                    var_d    = portfolio_var(pos, ohlcv_d) if pos else {}
+                    sec_df   = sector_exposure(pos) if pos else None
+                    corr     = correlation_matrix(syms_h, ohlcv_d) if len(syms_h)>1 else None
+                    path = export_full_report(pos, port, var_d, sec_df, corr)
+                    st.success(f"Saved to: {path}")
+                except Exception as e:
+                    st.error(f"Export failed: {e}")
+
+        with col_b:
+            if st.button("📋 Export Signals CSV"):
+                from exporter import export_signals_csv
+                try:
+                    path = export_signals_csv()
+                    st.success(f"Saved to: {path}")
+                except Exception as e:
+                    st.error(f"Export failed: {e}")
+
+        # Show recent alerts
+        st.markdown("### Recent Alerts")
+        try:
+            from notifications import get_notifier
+            alerts = get_notifier().load_recent(n_days=3)
+            if alerts:
+                for a in reversed(alerts[-20:]):
+                    icon = {"STOP_HIT":"🛑","TARGET_HIT":"✅","SIGNAL_NEW":"🎯",
+                            "RISK_WARNING":"⚠️","UPDATE_DONE":"⚡","TRAIN_DONE":"🧠"}.get(
+                            a.get("alert_type",""),"📢")
+                    ts = a.get("timestamp","")[:16]
+                    st.markdown(f"`{ts}` {icon} **{a.get('symbol','')}**: {a.get('message','')}")
+            else:
+                st.info("No alerts yet.")
+        except Exception:
+            st.info("No alerts yet.")
+
+    with tab_notify:
+        st.markdown("### Notification Configuration")
+        st.info(
+            "Set these as environment variables before starting the app. "
+            "Telegram is the easiest to set up."
+        )
+        st.markdown("""
+**Telegram Setup:**
+1. Message @BotFather on Telegram → `/newbot` → copy the token
+2. Message @userinfobot → copy your chat ID
+3. Set environment variables:
+```
+set TELEGRAM_TOKEN=your_bot_token
+set TELEGRAM_CHAT_ID=your_chat_id
+set ALERT_MIN_CONF=0.60
+```
+
+**Webhook (Discord/Slack/Custom):**
+```
+set ALERT_WEBHOOK_URL=https://discord.com/api/webhooks/...
+```
+
+**What triggers an alert:**
+- New BUY or SELL signal with confidence ≥ ALERT_MIN_CONF
+- Signal direction change
+- Stop-loss level hit during live trading
+- Take-profit level reached
+- Daily update completed
+""")
+        import os
+        has_tg = bool(os.environ.get("TELEGRAM_TOKEN"))
+        has_wh = bool(os.environ.get("ALERT_WEBHOOK_URL"))
+        st.markdown(f"**Status:** Telegram={'✅ configured' if has_tg else '❌ not set'}  |  "
+                    f"Webhook={'✅ configured' if has_wh else '❌ not set'}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -779,36 +1064,79 @@ elif page == "⚙️ Train / Update":
 
 elif page == "📈 Backtest":
     st.title("📈 Walk-Forward Backtest")
-    st.info("Simulates monthly retraining and paper trading over historical data.")
+
+    with st.expander("⚙️ Backtest Configuration", expanded=False):
+        bc1, bc2, bc3 = st.columns(3)
+        bt_conf    = bc1.slider("Min Confidence", 0.52, 0.80, 0.58, 0.02)
+        bt_pos     = bc2.slider("Position Size %", 5, 25, 10, 5)
+        bt_sl_mult = bc3.slider("SL Multiplier (ATR)", 1.0, 3.0, 1.5, 0.25)
+
+        bd1, bd2, bd3 = st.columns(3)
+        bt_tp_mult  = bd1.slider("TP Multiplier (ATR)", 1.5, 6.0, 3.0, 0.5)
+        bt_trail    = bd2.checkbox("Trailing Stop", value=False)
+        bt_short    = bd3.checkbox("Allow Short Trades", value=False)
 
     if st.button("▶️ Run Backtest", type="primary"):
         from backtester import Backtester
-        with st.spinner("Running walk-forward backtest..."):
+        syms = (symbols_input or config.DEFAULT_SYMBOLS)[:6]
+        with st.spinner(f"Running walk-forward backtest on {len(syms)} symbols..."):
             try:
-                bt = Backtester(symbols=symbols_input[:5] or config.DEFAULT_SYMBOLS[:5],
-                                horizon=horizon)
-                report = bt.run()
+                bt = Backtester(
+                    symbols=syms, horizon=horizon,
+                    confidence_threshold=bt_conf,
+                    position_size=bt_pos/100,
+                    atr_sl_mult=bt_sl_mult, atr_tp_mult=bt_tp_mult,
+                    trailing_stop=bt_trail, allow_short=bt_short,
+                )
+                report, results = bt.run()
                 st.code(report, language="text")
+                st.session_state["bt_results"] = results
             except Exception as e:
                 st.error(f"Backtest error: {e}")
 
+    # Load last backtest
     bt_files = sorted(Path(config.RESULTS_DIR).glob("backtest_*.json"), reverse=True)
     if bt_files:
-        st.markdown("### Last Backtest Results")
         with open(bt_files[0]) as f:
             bt_data = json.load(f)
+
+        st.markdown("### Last Backtest Results")
         rows = []
         for sym, r in bt_data.items():
             if "error" not in r:
                 rows.append({
-                    "Symbol":      sym,
-                    "AUC":         f"{r.get('auc',0):.3f}",
-                    "Accuracy":    f"{r.get('accuracy',0):.3f}",
-                    "Win Rate":    f"{r.get('win_rate',0):.3f}",
-                    "Strategy %":  f"{r.get('strategy_return_pct',0):+.1f}%",
-                    "B&H %":       f"{r.get('buy_hold_return_pct',0):+.1f}%",
-                    "Sharpe":      f"{r.get('sharpe_ratio',0):.2f}",
-                    "Max DD %":    f"{r.get('max_drawdown_pct',0):.1f}%",
+                    "Symbol":     sym,
+                    "AUC":        f"{r.get('auc',0):.3f}",
+                    "Win Rate":   f"{r.get('win_rate',0):.1%}",
+                    "Strategy":   f"{r.get('strategy_return_pct',0):+.1f}%",
+                    "Buy & Hold": f"{r.get('buy_hold_return_pct',0):+.1f}%",
+                    "Sharpe":     f"{r.get('sharpe_ratio',0):.2f}",
+                    "Max DD":     f"{r.get('max_drawdown_pct',0):.1f}%",
+                    "Calmar":     f"{r.get('calmar_ratio',0):.2f}",
+                    "SL Exits":   r.get("sl_exits", "—"),
+                    "TP Exits":   r.get("tp_exits", "—"),
                 })
         if rows:
             st.dataframe(pd.DataFrame(rows), use_container_width=True)
+
+        # Equity curves
+        eq_files = sorted(Path(config.RESULTS_DIR).glob("equity_curve_*.csv"), reverse=True)
+        if eq_files:
+            st.markdown("### Equity Curves")
+            eq_df = pd.read_csv(eq_files[0])
+            if not eq_df.empty:
+                fig_eq = go.Figure()
+                for col in eq_df.columns:
+                    fig_eq.add_trace(go.Scatter(
+                        y=eq_df[col], mode="lines", name=col,
+                        line=dict(width=2),
+                    ))
+                fig_eq.update_layout(**DARK, height=380, yaxis_title="Capital (VND)",
+                    margin=dict(l=0,r=0,t=20,b=0))
+                st.plotly_chart(fig_eq, use_container_width=True)
+
+        # Export
+        if st.button("📥 Export Backtest to Excel"):
+            from exporter import export_full_report
+            path = export_full_report()
+            st.success(f"Exported to {path}")
