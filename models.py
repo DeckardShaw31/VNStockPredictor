@@ -46,16 +46,17 @@ class XGBModel:
 
     def fit(self, X_train, y_train, X_val=None, y_val=None):
         from xgboost import XGBClassifier
-        eval_set = [(X_val, y_val)] if X_val is not None else None
+        X_train = np.nan_to_num(X_train, nan=0.0, posinf=0.0, neginf=0.0)
+        eval_set = None
+        if X_val is not None:
+            X_val = np.nan_to_num(X_val, nan=0.0, posinf=0.0, neginf=0.0)
+            eval_set = [(X_val, y_val)]
         self.model = XGBClassifier(**self.params)
-        self.model.fit(
-            X_train, y_train,
-            eval_set=eval_set,
-            verbose=False,
-        )
+        self.model.fit(X_train, y_train, eval_set=eval_set, verbose=False)
         return self
 
     def predict_proba(self, X) -> np.ndarray:
+        X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
         return self.model.predict_proba(X)[:, 1]
 
     def feature_importance(self, feature_names) -> pd.Series:
@@ -99,8 +100,12 @@ class LGBMModel:
 
     def fit(self, X_train, y_train, X_val=None, y_val=None):
         import lightgbm as lgb
+        X_train = np.nan_to_num(X_train, nan=0.0, posinf=0.0, neginf=0.0)
         callbacks = [lgb.early_stopping(50, verbose=False), lgb.log_evaluation(period=-1)]
-        eval_set  = [(X_val, y_val)] if X_val is not None else None
+        eval_set  = None
+        if X_val is not None:
+            X_val    = np.nan_to_num(X_val, nan=0.0, posinf=0.0, neginf=0.0)
+            eval_set = [(X_val, y_val)]
         self.model = lgb.LGBMClassifier(**self.params)
         self.model.fit(
             X_train, y_train,
@@ -110,6 +115,7 @@ class LGBMModel:
         return self
 
     def predict_proba(self, X) -> np.ndarray:
+        X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
         return self.model.predict_proba(X)[:, 1]
 
     def feature_importance(self, feature_names) -> pd.Series:

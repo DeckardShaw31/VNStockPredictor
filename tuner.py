@@ -23,8 +23,17 @@ logger = logging.getLogger("tuner")
 
 # ── XGBoost Objective ──────────────────────────────────────────────────────────
 
+def _sanitize(X):
+    """Replace inf/-inf/NaN with 0. Must be called before any tree model."""
+    return np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
+
+
+# ── XGBoost Objective ──────────────────────────────────────────────────────────
+
 def _xgb_objective(trial, X_tr, y_tr, X_val, y_val):
     from xgboost import XGBClassifier
+
+    X_tr, X_val = _sanitize(X_tr), _sanitize(X_val)
 
     sp = config.XGB_SEARCH_SPACE
     params = {
@@ -51,6 +60,8 @@ def _xgb_objective(trial, X_tr, y_tr, X_val, y_val):
 
 def _lgbm_objective(trial, X_tr, y_tr, X_val, y_val):
     import lightgbm as lgb
+
+    X_tr, X_val = _sanitize(X_tr), _sanitize(X_val)
 
     sp = config.LGBM_SEARCH_SPACE
     params = {

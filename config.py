@@ -62,8 +62,8 @@ VNINDEX_SYMBOL = "VNINDEX"
 VN30_SYMBOL    = "VN30"      # Blue-chip index (fear/greed proxy)
 
 # ── Data Config ────────────────────────────────────────────────────────────────
-LOOKBACK_DAYS       = 3650   # ~10 years
-FEATURE_WINDOW      = 600
+LOOKBACK_DAYS       = 1460   # ~4 years
+FEATURE_WINDOW      = 300
 CACHE_TTL_HOURS     = 6
 
 # ── Model Config ───────────────────────────────────────────────────────────────

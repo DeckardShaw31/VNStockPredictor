@@ -283,17 +283,32 @@ elif page == "🔍 Stock Analysis":
     # Signal detail
     if sig:
         st.markdown("### Trade Signal Detail")
+        sig_dir = sig.get("signal", "HOLD")
         sa, sb, sc, sd = st.columns(4)
-        sa.metric("Signal",      sig.get("signal","—"))
-        sb.metric("Entry Zone",  f"{sig.get('entry_low',0):,.0f} – {sig.get('entry_high',0):,.0f}")
-        sc.metric("Stop-Loss",   f"{sig.get('stop_loss',0):,.0f}  ({sig.get('stop_loss_pct',0):+.1f}%)")
-        sd.metric("Take-Profit", f"{sig.get('take_profit',0):,.0f}  ({sig.get('take_profit_pct',0):+.1f}%)")
+        sa.metric("Signal",     sig_dir)
+        sb.metric("Entry Zone", f"{sig.get('entry_low',0):,.0f} – {sig.get('entry_high',0):,.0f}")
+
+        sl_val = sig.get('stop_loss', 0)
+        tp_val = sig.get('take_profit', 0)
+        sl_pct = sig.get('stop_loss_pct', 0)
+        tp_pct = sig.get('take_profit_pct', 0)
+
+        # For BUY: SL is below (loss=negative%), TP is above (gain=positive%)
+        # For SELL: SL is above (risk=positive%), TP is below (profit=negative%)
+        sl_label = "Stop-Loss (risk)"   if sig_dir == "SELL" else "Stop-Loss"
+        tp_label = "Take-Profit (gain)" if sig_dir == "SELL" else "Take-Profit"
+        sc.metric(sl_label, f"{sl_val:,.0f}", f"{sl_pct:+.1f}%",
+                  delta_color="inverse")
+        sd.metric(tp_label, f"{tp_val:,.0f}", f"{tp_pct:+.1f}%",
+                  delta_color="normal")
 
         se, sf, sg, sh = st.columns(4)
         se.metric("R/R Ratio",   f"1 : {sig.get('rr_ratio',0):.2f}")
-        sf.metric("Position",    f"{sig.get('position_size_pct',0):.1f}% of capital")
-        sg.metric("Pivot PP",    f"{sig.get('pivot_pp',0):,.0f}")
-        sh.metric("Fib 61.8%",   f"{sig.get('fib_618',0):,.0f}")
+        pos_pct = sig.get('position_size_pct', 0)
+        pos_label = f"{pos_pct:.1f}% of capital" if pos_pct > 0 else "HOLD — no position"
+        sf.metric("Suggested Position", pos_label)
+        sg.metric("Pivot PP", f"{sig.get('pivot_pp',0):,.0f}")
+        sh.metric("Fib 61.8%", f"{sig.get('fib_618',0):,.0f}")
 
         with st.expander("Math model votes"):
             votes = sig.get("math_votes", {})

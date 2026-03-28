@@ -30,17 +30,14 @@ import config
 
 logger = logging.getLogger("trade_signals")
 
-# ── Signal Parameters ──────────────────────────────────────────────────────────
-MIN_AI_CONFIDENCE = 0.52    # AI prob must deviate from 0.5 by at least this
-                             # 0.52 = fires when AI is 54%+ confident either way
-MIN_RR_RATIO      = 1.5     # Below this R/R → suppress signal
-ATR_SL_MULTIPLIER = 1.5     # Stop-loss = entry - ATR_SL_MULT * ATR14
-ATR_TP_MULTIPLIER = 3.0     # Take-profit = entry + ATR_TP_MULT * ATR14
-MAX_POSITION_PCT  = 0.15    # Max 15% of capital per position
-KELLY_FRACTION    = 0.25    # Conservative quarter-Kelly sizing
-
-# Keep old name as alias for backwards compatibility
-MIN_CONFIDENCE = MIN_AI_CONFIDENCE
+# ── Signal Parameters — read from config (single source of truth) ─────────────
+MIN_AI_CONFIDENCE = config.MIN_AI_CONFIDENCE
+MIN_RR_RATIO      = config.MIN_RR_RATIO
+ATR_SL_MULTIPLIER = config.ATR_SL_MULTIPLIER
+ATR_TP_MULTIPLIER = config.ATR_TP_MULTIPLIER
+MAX_POSITION_PCT  = config.MAX_POSITION_PCT
+KELLY_FRACTION    = config.KELLY_FRACTION
+MIN_CONFIDENCE    = MIN_AI_CONFIDENCE   # backwards compat alias
 
 
 @dataclass
@@ -273,9 +270,21 @@ def generate_signal(
         signal = "HOLD"
         logger.info(f"  {symbol}: signal suppressed (R/R={rr_ratio:.2f} < {MIN_RR_RATIO})")
 
-    # ── Stop-loss and take-profit percentages ─────────────────────────────
-    sl_pct = (stop_loss - entry_price) / entry_price * 100
-    tp_pct = (take_profit - entry_price) / entry_price * 100
+    # ── Stop-loss and take-profit percentages ────────────────────────────
+    # Always show from the trader's P&L perspective:
+    #   SL % = negative (represents max loss if stop is hit)
+    #   TP % = positive (represents max gain if target is hit)
+    # For BUY:  SL < entry (negative naturally), TP > entry (positive naturally)
+    # For SELL: SL > entry (would be positive raw), TP < entry (would be negative raw)
+    #           → flip signs so display always means loss=negative, gain=positive
+    sl_pct_raw = (stop_loss   - entry_price) / entry_price * 100
+    tp_pct_raw = (take_profit - entry_price) / entry_price * 100
+    if direction == 1:   # BUY — SL below, TP above
+        sl_pct = sl_pct_raw   # negative ✓
+        tp_pct = tp_pct_raw   # positive ✓
+    else:                # SELL — SL above, TP below
+        sl_pct = abs(sl_pct_raw)    # show as positive loss % (price moves against you)
+        tp_pct = -abs(tp_pct_raw)   # show as negative but means profit
 
     # ── Position sizing (half-Kelly) ──────────────────────────────────────
     # Kelly fraction = (win_prob * reward - loss_prob * risk) / reward
