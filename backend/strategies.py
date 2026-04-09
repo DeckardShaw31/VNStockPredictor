@@ -180,7 +180,7 @@ def generate_signals(df_features):
 
     return df
 
-def generate_frontend_json(df_latest, output_file="data/signals.json"):
+def generate_frontend_json(df_latest, output_file="backend/data/signals.json"):
     """
     Creates the JSON file required by the frontend dashboard.
     df_latest: DataFrame containing ONLY the most recent trading day's data for all symbols.
@@ -228,17 +228,17 @@ def generate_frontend_json(df_latest, output_file="data/signals.json"):
 
 if __name__ == "__main__":
     print("Loading computed features...")
-    df = pd.read_csv("data/vn100_features.csv")
+    df = pd.read_csv("backend/data/vn100_features.csv")
 
     print("Applying strategy logic and Tier classification...")
     df_signals = generate_signals(df)
 
     # Save the full processed dataframe for backtesting purposes
-    df_signals.to_csv("data/vn100_signals_full.csv", index=False)
+    df_signals.to_csv("backend/data/vn100_signals_full.csv", index=False)
 
     # Extract just the latest day for the frontend dashboard
     latest_date = df_signals['time'].max()
     df_latest = df_signals[df_signals['time'] == latest_date]
     print(f"Latest data date: {latest_date}. Generating JSON for {len(df_latest)} tickers.")
 
-    generate_frontend_json(df_latest, "data/liveData.json")
+    generate_frontend_json(df_latest, "backend/data/liveData.json")

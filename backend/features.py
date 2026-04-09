@@ -323,7 +323,7 @@ def compute_all_features(df):
     return df
 
 if __name__ == "__main__":
-    df = pd.read_csv("data/vn100_subset.csv")
+    df = pd.read_csv("backend/data/vn100_subset.csv")
     print("Loaded data, computing features...")
 
     # Process each ticker separately to avoid cross-contamination of rolling features
@@ -334,5 +334,5 @@ if __name__ == "__main__":
         features_list.append(feat_df)
 
     final_df = pd.concat(features_list, ignore_index=True)
-    final_df.to_csv("data/vn100_features.csv", index=False)
+    final_df.to_csv("backend/data/vn100_features.csv", index=False)
     print(f"Features computed and saved. Shape: {final_df.shape}")

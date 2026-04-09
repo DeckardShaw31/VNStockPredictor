@@ -9,7 +9,7 @@ def get_vn100_symbols():
     # Using 10 major symbols to keep it manageable but realistic
     return ["FPT", "HPG", "VNM", "VCB", "VIC", "SSI", "MWG", "VPB", "TCB", "MBB"]
 
-def fetch_data_for_symbols(symbols, start_date, end_date, output_dir="data"):
+def fetch_data_for_symbols(symbols, start_date, end_date, output_dir="backend/data"):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
