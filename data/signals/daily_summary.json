@@ -1,0 +1,142 @@
+[
+  {
+    "ticker": "HPG",
+    "tier": 2,
+    "strat": "SAR_MACD",
+    "date": "2026-02-04",
+    "prob": 75.6
+  },
+  {
+    "ticker": "MSN",
+    "tier": 2,
+    "strat": "SAR_MACD",
+    "date": "2026-01-29",
+    "prob": 75.6
+  },
+  {
+    "ticker": "PLX",
+    "tier": 2,
+    "strat": "DMI_WAVE",
+    "date": "2026-03-04",
+    "prob": 75.0
+  },
+  {
+    "ticker": "MWG",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-02-12",
+    "prob": 70.6
+  },
+  {
+    "ticker": "STB",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-04-08",
+    "prob": 70.6
+  },
+  {
+    "ticker": "FPT",
+    "tier": 3,
+    "strat": "DMI_WAVE",
+    "date": "2026-01-19",
+    "prob": 70.0
+  },
+  {
+    "ticker": "MBB",
+    "tier": 3,
+    "strat": "VOLUME_EXPLOSION",
+    "date": "2026-02-11",
+    "prob": 61.4
+  },
+  {
+    "ticker": "ACB",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-01-27",
+    "prob": 59.3
+  },
+  {
+    "ticker": "CTG",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-02-03",
+    "prob": 59.3
+  },
+  {
+    "ticker": "GAS",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-03-02",
+    "prob": 59.3
+  },
+  {
+    "ticker": "VCB",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-02-03",
+    "prob": 59.3
+  },
+  {
+    "ticker": "VHM",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2025-12-26",
+    "prob": 59.3
+  },
+  {
+    "ticker": "VNM",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-02-05",
+    "prob": 59.3
+  },
+  {
+    "ticker": "VRE",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-01-13",
+    "prob": 59.3
+  },
+  {
+    "ticker": "SSI",
+    "tier": 3,
+    "strat": "BOLLINGER",
+    "date": "2026-03-04",
+    "prob": 58.2
+  },
+  {
+    "ticker": "VPB",
+    "tier": 3,
+    "strat": "BOLLINGER",
+    "date": "2025-10-15",
+    "prob": 58.2
+  },
+  {
+    "ticker": "BID",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2026-02-24",
+    "prob": 53.2
+  },
+  {
+    "ticker": "HDB",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2026-03-16",
+    "prob": 53.2
+  },
+  {
+    "ticker": "TCB",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2026-03-16",
+    "prob": 53.2
+  },
+  {
+    "ticker": "VIC",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2026-01-23",
+    "prob": 53.2
+  }
+]

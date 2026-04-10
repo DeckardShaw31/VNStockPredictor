@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VN100 Quant Signal Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── Loading overlay ────────────────────────── -->
+<div id="loading">
+  <div class="spinner"></div>
+  <p>LOADING VN100 DATA …</p>
+</div>
+
+<!-- ── Floating chart tooltip ─────────────────── -->
+<div id="chart-tooltip">
+  <div class="tt-date" id="tt-date"></div>
+  <div class="tt-row"><span class="tt-lbl">Đóng cửa</span><span class="tt-val" id="tt-close"></span></div>
+  <div class="tt-row"><span class="tt-lbl">Thay đổi</span><span class="tt-val" id="tt-chg"></span></div>
+  <div class="tt-row"><span class="tt-lbl">Khối lượng</span><span class="tt-val" id="tt-vol"></span></div>
+  <div class="tt-row"><span class="tt-lbl">RSI 14</span><span class="tt-val" id="tt-rsi"></span></div>
+  <div class="tt-row"><span class="tt-lbl">ADX 14</span><span class="tt-val" id="tt-adx"></span></div>
+</div>
+
+<!-- ── Header ─────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">VN</div>
+    <div>
+      <div class="logo-text">VN100 QUANT SIGNAL</div>
+      <div class="logo-sub">Institutional Model v2</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="status-pill" class="status-pill status-static">
+      <div class="pulse"></div>
+      <span id="status-text">LOADING</span>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active"  onclick="switchTab('live')">Live Dashboard</button>
+      <button class="tab-btn"         onclick="switchTab('backtest')">Backtester</button>
+      <button class="tab-btn"         onclick="switchTab('signals')">All Signals</button>
+    </div>
+  </div>
+</header>
+
+<!-- ── Ticker selector bar ────────────────────── -->
+<div class="ticker-bar" id="ticker-bar"></div>
+
+<!-- ── Page content ───────────────────────────── -->
+<main>
+
+  <!-- LIVE TAB -->
+  <div id="tab-live">
+    <div id="content-area">
+      <div class="stats-grid" id="stats-grid"></div>
+
+      <div class="main-grid">
+        <!-- Left: charts -->
+        <div class="chart-stack">
+
+          <!-- Price chart -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M1 9L4 6L7 7L11 3" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Price &amp; GARCH Bounds
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;font-size:10px;color:var(--muted);">
+                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                  <input type="checkbox" id="toggle-sma" checked onchange="redrawChart()"> SMA
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                  <input type="checkbox" id="toggle-bb" onchange="redrawChart()"> BB
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                  <input type="checkbox" id="toggle-sar" onchange="redrawChart()"> SAR
+                </label>
+              </div>
+            </div>
+            <!-- Stacked canvases: price-chart (data) + price-overlay (crosshair) -->
+            <div class="chart-wrap" id="price-chart-wrap">
+              <canvas id="price-chart"></canvas>
+              <canvas id="price-overlay"></canvas>
+            </div>
+            <div class="chart-legend">
+              <div class="legend-item"><div class="legend-line" style="background:var(--blue)"></div> Close</div>
+              <div class="legend-item"><div class="legend-line" style="background:var(--purple)"></div> Kalman</div>
+              <div class="legend-item"><div class="legend-dash" style="color:var(--muted)"></div> GARCH ±1.96σ</div>
+              <div class="legend-item"><div class="legend-line" style="background:var(--amber)"></div> SMA20</div>
+              <div class="legend-item"><div class="legend-line" style="background:var(--cyan);opacity:.6"></div> SMA50</div>
+            </div>
+          </div>
+
+          <!-- Volume chart -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">Volume &amp; Relative Volume</div>
+            </div>
+            <canvas id="vol-chart"></canvas>
+          </div>
+
+          <!-- RSI / MACD -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">RSI 14 &amp; MACD Histogram</div>
+              <div id="rsi-value" style="font-family:monospace;font-size:12px;"></div>
+            </div>
+            <canvas id="rsi-chart"></canvas>
+          </div>
+
+        </div><!-- /chart-stack -->
+
+        <!-- Right: signal + indicators -->
+        <div class="side-stack">
+          <div id="signal-card-wrap"></div>
+          <div class="card">
+            <div class="card-head"><div class="card-title">Alpha Features</div></div>
+            <div id="feat-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-title">Vietnam Macro</div></div>
+            <div id="macro-list"></div>
+          </div>
+        </div>
+
+      </div><!-- /main-grid -->
+    </div><!-- /content-area -->
+  </div><!-- /tab-live -->
+
+  <!-- BACKTEST TAB -->
+  <div id="tab-backtest" style="display:none;">
+    <div class="bt-grid" id="bt-stats-grid"></div>
+    <div class="bt-chart-wrap">
+      <div class="card-head"><div class="card-title">Equity Curve</div></div>
+      <canvas id="bt-equity-chart"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Trade Ledger</div></div>
+      <div style="overflow-x:auto;">
+        <table class="trade-table">
+          <thead>
+            <tr>
+              <th>Entry</th><th>Exit</th><th>Entry Px</th><th>Exit Px</th>
+              <th>P&amp;L %</th><th>Strategy</th><th>Tier</th><th>Reason</th>
+            </tr>
+          </thead>
+          <tbody id="trade-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /tab-backtest -->
+
+  <!-- ALL SIGNALS TAB -->
+  <div id="tab-signals" style="display:none;">
+    <div id="all-signals-wrap"
+         style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">
+    </div>
+  </div>
+
+</main><!-- /main -->
+
+<script src="app.js"></script>
+</body>
+</html>

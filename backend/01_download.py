@@ -57,8 +57,30 @@ VN100_TICKERS = [
 ]
 
 VN100_DEFAULT = [
-    "HPG", "VCB", "VHM", "VIC", "VNM", "MSN", "TCB", "BID", "CTG", "MBB",
-    "ACB", "FPT", "MWG", "SSI", "GAS", "PLX", "VRE", "HDB", "VPB", "STB",
+#    "HPG", "VCB", "VHM", "VIC", "VNM", "MSN", "TCB", "BID", "CTG", "MBB",
+#    "ACB", "FPT", "MWG", "SSI", "GAS", "PLX", "VRE", "HDB", "VPB", "STB",
+    # Banking
+    "VCB", "BID", "CTG", "MBB", "TCB", "ACB", "STB", "HDB", "VPB", "LPB",
+    "OCB", "EIB", "MSB", "SHB", "TPB", "ABB", "BAB", "NVB", "SSB", "VIB",
+    # Insurance / Securities
+    "BVH", "SSI", "VCI", "HCM", "SHS", "VND", "FTS", "VIX", "CTS", "BSI",
+    # Real Estate
+    "VHM", "VIC", "NVL", "DXG", "KDH", "PDR", "DIG", "HDG", "CEO", "TCH",
+    "IJC", "SJS", "TDH", "AGG", "LDG",
+    # Consumer / Retail
+    "VNM", "MSN", "MWG", "PNJ", "SAB", "KDC", "MCH", "VHC", "ANV", "HSG",
+    # Industry / Steel
+    "HPG", "NKG", "SMC", "TLH", "VGC",
+    # Oil & Gas / Utilities
+    "GAS", "PLX", "POW", "PGV", "NT2", "REE", "PPC", "HND", "CHP", "SBA",
+    # Technology
+    "FPT", "CMG", "ELC", "ITD",
+    # Logistics / Aviation
+    "ACV", "HVN", "VJC", "GMD", "HAH",
+    # Construction / Materials
+    "VRE", "CTD", "BCG", "LCG", "PC1", "VCG", "C4G", "HHV",
+    # Other
+    "DPM", "DCM", "BMP", "CSV", "RAL",
 ]
 
 
