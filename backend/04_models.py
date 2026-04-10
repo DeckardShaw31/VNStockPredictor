@@ -127,7 +127,7 @@ def train_model(
 
     try:
         clf = XGBClassifier(
-            n_estimators=3000,
+            n_estimators=300,
             max_depth=5,
             learning_rate=0.05,
             subsample=0.8,
@@ -142,7 +142,7 @@ def train_model(
     except TypeError:
         # fallback without use_label_encoder
         clf = XGBClassifier(
-            n_estimators=3000, max_depth=5, learning_rate=0.05,
+            n_estimators=300, max_depth=5, learning_rate=0.05,
             subsample=0.8, colsample_bytree=0.8,
             scale_pos_weight=scale, eval_metric="logloss",
             random_state=42, n_jobs=-1, verbosity=0,
