@@ -1,5 +1,12 @@
 [
   {
+    "ticker": "HDC",
+    "tier": 1,
+    "strat": "SAR_MACD",
+    "date": "2025-10-13",
+    "prob": 80.6
+  },
+  {
     "ticker": "HPG",
     "tier": 2,
     "strat": "SAR_MACD",
@@ -14,6 +21,13 @@
     "prob": 75.6
   },
   {
+    "ticker": "CTS",
+    "tier": 2,
+    "strat": "DMI_WAVE",
+    "date": "2025-10-17",
+    "prob": 75.0
+  },
+  {
     "ticker": "PLX",
     "tier": 2,
     "strat": "DMI_WAVE",
@@ -21,10 +35,192 @@
     "prob": 75.0
   },
   {
+    "ticker": "TPB",
+    "tier": 2,
+    "strat": "VOLUME_EXPLOSION",
+    "date": "2026-02-25",
+    "prob": 66.4
+  },
+  {
+    "ticker": "BCM",
+    "tier": 2,
+    "strat": "UPTREND",
+    "date": "2026-02-04",
+    "prob": 64.3
+  },
+  {
+    "ticker": "BSI",
+    "tier": 2,
+    "strat": "UPTREND",
+    "date": "2025-09-04",
+    "prob": 64.3
+  },
+  {
+    "ticker": "DPM",
+    "tier": 2,
+    "strat": "UPTREND",
+    "date": "2026-03-30",
+    "prob": 64.3
+  },
+  {
+    "ticker": "GMD",
+    "tier": 2,
+    "strat": "UPTREND",
+    "date": "2026-03-18",
+    "prob": 64.3
+  },
+  {
+    "ticker": "PNJ",
+    "tier": 2,
+    "strat": "UPTREND",
+    "date": "2026-02-24",
+    "prob": 64.3
+  },
+  {
+    "ticker": "ANV",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2025-11-18",
+    "prob": 70.6
+  },
+  {
+    "ticker": "DBC",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-01-14",
+    "prob": 70.6
+  },
+  {
+    "ticker": "DIG",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2025-10-14",
+    "prob": 70.6
+  },
+  {
+    "ticker": "DSE",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-01-12",
+    "prob": 70.6
+  },
+  {
+    "ticker": "DXG",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2025-10-16",
+    "prob": 70.6
+  },
+  {
+    "ticker": "EIB",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-03-18",
+    "prob": 70.6
+  },
+  {
+    "ticker": "FTS",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-01-12",
+    "prob": 70.6
+  },
+  {
+    "ticker": "HAG",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-01-19",
+    "prob": 70.6
+  },
+  {
+    "ticker": "HCM",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2025-10-08",
+    "prob": 70.6
+  },
+  {
+    "ticker": "HDG",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-03-12",
+    "prob": 70.6
+  },
+  {
+    "ticker": "KDC",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2025-12-22",
+    "prob": 70.6
+  },
+  {
+    "ticker": "LPB",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-03-17",
+    "prob": 70.6
+  },
+  {
+    "ticker": "MSB",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-01-08",
+    "prob": 70.6
+  },
+  {
     "ticker": "MWG",
     "tier": 3,
     "strat": "SAR_MACD",
     "date": "2026-02-12",
+    "prob": 70.6
+  },
+  {
+    "ticker": "NLG",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-04-09",
+    "prob": 70.6
+  },
+  {
+    "ticker": "OCB",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2025-10-10",
+    "prob": 70.6
+  },
+  {
+    "ticker": "PDR",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2025-10-14",
+    "prob": 70.6
+  },
+  {
+    "ticker": "PHR",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-02-27",
+    "prob": 70.6
+  },
+  {
+    "ticker": "SAB",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-01-13",
+    "prob": 70.6
+  },
+  {
+    "ticker": "SHB",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2025-10-09",
+    "prob": 70.6
+  },
+  {
+    "ticker": "SIP",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-03-30",
     "prob": 70.6
   },
   {
@@ -35,6 +231,41 @@
     "prob": 70.6
   },
   {
+    "ticker": "TCH",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-04-09",
+    "prob": 70.6
+  },
+  {
+    "ticker": "VCI",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-04-01",
+    "prob": 70.6
+  },
+  {
+    "ticker": "VND",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-01-12",
+    "prob": 70.6
+  },
+  {
+    "ticker": "VSC",
+    "tier": 3,
+    "strat": "SAR_MACD",
+    "date": "2026-04-08",
+    "prob": 70.6
+  },
+  {
+    "ticker": "EVF",
+    "tier": 3,
+    "strat": "DMI_WAVE",
+    "date": "2026-03-12",
+    "prob": 70.0
+  },
+  {
     "ticker": "FPT",
     "tier": 3,
     "strat": "DMI_WAVE",
@@ -42,10 +273,66 @@
     "prob": 70.0
   },
   {
+    "ticker": "KOS",
+    "tier": 3,
+    "strat": "DMI_WAVE",
+    "date": "2026-01-29",
+    "prob": 70.0
+  },
+  {
+    "ticker": "REE",
+    "tier": 3,
+    "strat": "DMI_WAVE",
+    "date": "2026-03-30",
+    "prob": 70.0
+  },
+  {
+    "ticker": "VTP",
+    "tier": 3,
+    "strat": "DMI_WAVE",
+    "date": "2026-01-20",
+    "prob": 70.0
+  },
+  {
+    "ticker": "DGC",
+    "tier": 3,
+    "strat": "VOLUME_EXPLOSION",
+    "date": "2025-12-19",
+    "prob": 61.4
+  },
+  {
+    "ticker": "KBC",
+    "tier": 3,
+    "strat": "VOLUME_EXPLOSION",
+    "date": "2026-01-19",
+    "prob": 61.4
+  },
+  {
+    "ticker": "KDH",
+    "tier": 3,
+    "strat": "VOLUME_EXPLOSION",
+    "date": "2025-10-15",
+    "prob": 61.4
+  },
+  {
     "ticker": "MBB",
     "tier": 3,
     "strat": "VOLUME_EXPLOSION",
     "date": "2026-02-11",
+    "prob": 61.4
+  },
+  {
+    "ticker": "POW",
+    "tier": 3,
+    "strat": "VOLUME_EXPLOSION",
+    "date": "2026-03-03",
+    "prob": 61.4
+  },
+  {
+    "ticker": "PPC",
+    "tier": 3,
+    "strat": "VOLUME_EXPLOSION",
+    "date": "2026-03-19",
     "prob": 61.4
   },
   {
@@ -56,10 +343,59 @@
     "prob": 59.3
   },
   {
+    "ticker": "BMP",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-01-07",
+    "prob": 59.3
+  },
+  {
+    "ticker": "BVH",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-04-09",
+    "prob": 59.3
+  },
+  {
+    "ticker": "BWE",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2025-10-31",
+    "prob": 59.3
+  },
+  {
+    "ticker": "CII",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2025-10-23",
+    "prob": 59.3
+  },
+  {
+    "ticker": "CTD",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2025-11-06",
+    "prob": 59.3
+  },
+  {
     "ticker": "CTG",
     "tier": 3,
     "strat": "UPTREND",
     "date": "2026-02-03",
+    "prob": 59.3
+  },
+  {
+    "ticker": "DCM",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-03-31",
+    "prob": 59.3
+  },
+  {
+    "ticker": "DXS",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2025-09-10",
     "prob": 59.3
   },
   {
@@ -70,10 +406,115 @@
     "prob": 59.3
   },
   {
+    "ticker": "GEE",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2025-12-09",
+    "prob": 59.3
+  },
+  {
+    "ticker": "GVR",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-03-02",
+    "prob": 59.3
+  },
+  {
+    "ticker": "HSG",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2025-09-10",
+    "prob": 59.3
+  },
+  {
+    "ticker": "NAB",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-01-20",
+    "prob": 59.3
+  },
+  {
+    "ticker": "NKG",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2025-09-25",
+    "prob": 59.3
+  },
+  {
+    "ticker": "NT2",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-03-06",
+    "prob": 59.3
+  },
+  {
+    "ticker": "PC1",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-03-12",
+    "prob": 59.3
+  },
+  {
+    "ticker": "PTB",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-03-02",
+    "prob": 59.3
+  },
+  {
+    "ticker": "PVT",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-03-05",
+    "prob": 59.3
+  },
+  {
+    "ticker": "SBT",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2025-10-23",
+    "prob": 59.3
+  },
+  {
+    "ticker": "SJS",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2025-09-25",
+    "prob": 59.3
+  },
+  {
+    "ticker": "SSB",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2025-09-04",
+    "prob": 59.3
+  },
+  {
+    "ticker": "TLG",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-03-11",
+    "prob": 59.3
+  },
+  {
     "ticker": "VCB",
     "tier": 3,
     "strat": "UPTREND",
     "date": "2026-02-03",
+    "prob": 59.3
+  },
+  {
+    "ticker": "VCG",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2025-10-02",
+    "prob": 59.3
+  },
+  {
+    "ticker": "VHC",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-02-05",
     "prob": 59.3
   },
   {
@@ -84,10 +525,31 @@
     "prob": 59.3
   },
   {
+    "ticker": "VIB",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2025-09-05",
+    "prob": 59.3
+  },
+  {
+    "ticker": "VIX",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2025-09-25",
+    "prob": 59.3
+  },
+  {
     "ticker": "VNM",
     "tier": 3,
     "strat": "UPTREND",
     "date": "2026-02-05",
+    "prob": 59.3
+  },
+  {
+    "ticker": "VPI",
+    "tier": 3,
+    "strat": "UPTREND",
+    "date": "2026-03-02",
     "prob": 59.3
   },
   {
@@ -96,6 +558,20 @@
     "strat": "UPTREND",
     "date": "2026-01-13",
     "prob": 59.3
+  },
+  {
+    "ticker": "GEX",
+    "tier": 3,
+    "strat": "BOLLINGER",
+    "date": "2025-10-16",
+    "prob": 58.2
+  },
+  {
+    "ticker": "IMP",
+    "tier": 3,
+    "strat": "BOLLINGER",
+    "date": "2026-03-11",
+    "prob": 58.2
   },
   {
     "ticker": "SSI",
@@ -119,10 +595,80 @@
     "prob": 53.2
   },
   {
+    "ticker": "CMG",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2026-02-04",
+    "prob": 53.2
+  },
+  {
+    "ticker": "CTR",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2026-03-16",
+    "prob": 53.2
+  },
+  {
+    "ticker": "DGW",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2026-03-17",
+    "prob": 53.2
+  },
+  {
+    "ticker": "FRT",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2026-03-16",
+    "prob": 53.2
+  },
+  {
     "ticker": "HDB",
     "tier": 3,
     "strat": "STOCH_RSI",
     "date": "2026-03-16",
+    "prob": 53.2
+  },
+  {
+    "ticker": "HHV",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2025-10-10",
+    "prob": 53.2
+  },
+  {
+    "ticker": "HT1",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2026-03-31",
+    "prob": 53.2
+  },
+  {
+    "ticker": "PAN",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2026-03-16",
+    "prob": 53.2
+  },
+  {
+    "ticker": "PVD",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2026-03-30",
+    "prob": 53.2
+  },
+  {
+    "ticker": "SCS",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2026-03-16",
+    "prob": 53.2
+  },
+  {
+    "ticker": "SZC",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2026-03-17",
     "prob": 53.2
   },
   {
@@ -133,10 +679,24 @@
     "prob": 53.2
   },
   {
+    "ticker": "VGC",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2026-02-25",
+    "prob": 53.2
+  },
+  {
     "ticker": "VIC",
     "tier": 3,
     "strat": "STOCH_RSI",
     "date": "2026-01-23",
+    "prob": 53.2
+  },
+  {
+    "ticker": "VJC",
+    "tier": 3,
+    "strat": "STOCH_RSI",
+    "date": "2025-12-18",
     "prob": 53.2
   }
 ]

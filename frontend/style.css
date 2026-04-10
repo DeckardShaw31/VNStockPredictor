@@ -377,3 +377,37 @@ main { max-width: 1440px; margin: 0 auto; padding: 16px 24px; }
   header { padding: 0 12px; }
   main { padding: 12px; }
 }
+
+/* ── Overlay canvases for vol + rsi ─── */
+#vol-chart, #vol-overlay,
+#rsi-chart, #rsi-overlay { width: 100%; display: block; }
+
+#vol-chart  { height: 100px; }
+#vol-overlay{ height: 100px; position: absolute; top:0; left:0; pointer-events:none; }
+
+#rsi-chart  { height: 80px; }
+#rsi-overlay{ height: 80px;  position: absolute; top:0; left:0; pointer-events:none; }
+
+/* Signal state badge */
+.state-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 3px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.06em; margin-top: 6px;
+}
+.state-entry    { background:rgba(255,179,64,.15); border:1px solid rgba(255,179,64,.35); color:var(--amber); }
+.state-holding  { background:rgba(77,159,255,.15);  border:1px solid rgba(77,159,255,.35); color:var(--blue); }
+.state-target   { background:rgba(0,229,160,.15);   border:1px solid rgba(0,229,160,.35); color:var(--green); }
+.state-stop     { background:rgba(255,77,106,.15);  border:1px solid rgba(255,77,106,.35); color:var(--red); }
+.state-watch    { background:rgba(90,107,138,.15);  border:1px solid rgba(90,107,138,.35); color:var(--muted); }
+.state-expired  { background:rgba(90,107,138,.1);   border:1px solid rgba(90,107,138,.25); color:var(--dim); }
+
+/* Live position bar in backtester */
+.live-pos-bar {
+  background: var(--green-d); border: 1px solid var(--green-b);
+  border-radius: 6px; padding: 10px 14px; margin-bottom: 12px;
+  display: flex; gap: 20px; align-items: center;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+}
+.live-pos-bar .lp-label { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; }
+.live-pos-bar .lp-val   { font-size: 14px; font-weight: 700; margin-top: 2px; }
