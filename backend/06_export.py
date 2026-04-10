@@ -232,6 +232,19 @@ def build_ticker_payload(ticker: str) -> dict | None:
         "directionProb":      signal_enriched.get("model_dir_prob", signal.get("dir_prob", 50)),
     }
 
+    # ── Backtest equity curve + trades ───────────────────────────────────────────
+    backtest_equity = []
+    backtest_trades = []
+    eq_path = REP / f"{ticker}_equity.csv"
+    if eq_path.exists():
+        eq_df = pd.read_csv(eq_path)
+        backtest_equity = eq_df.to_dict("records")
+    if stats_path.exists():
+        with open(stats_path) as f:
+            bt_all = json.load(f)
+        ticker_trades = bt_all.get("trades", {}).get(ticker, [])
+        backtest_trades = ticker_trades if isinstance(ticker_trades, list) else []
+
     return {
         "ticker":     ticker,
         "name":       meta["name"],
@@ -244,6 +257,7 @@ def build_ticker_payload(ticker: str) -> dict | None:
         "indicators": indicators,
         "metrics":    metrics,
         "modelProba": model_proba,
+        "backtest":   {"equity": backtest_equity, "trades": backtest_trades},
     }
 
 

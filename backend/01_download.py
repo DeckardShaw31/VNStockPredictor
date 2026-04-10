@@ -32,28 +32,36 @@ log = logging.getLogger("download")
 
 # ── VN100 Universe ────────────────────────────────────────────────────────────
 VN100_TICKERS = [
-    # Banking
+# Banking
     "VCB", "BID", "CTG", "MBB", "TCB", "ACB", "STB", "HDB", "VPB", "LPB",
-    "OCB", "EIB", "MSB", "SHB", "TPB", "ABB", "BAB", "NVB", "SSB", "VIB",
+    "OCB", "EIB", "MSB", "SHB", "TPB", "SSB", "VIB", "NAB", "EVF",
+    
     # Insurance / Securities
-    "BVH", "SSI", "VCI", "HCM", "SHS", "VND", "FTS", "VIX", "CTS", "BSI",
-    # Real Estate
-    "VHM", "VIC", "NVL", "DXG", "KDH", "PDR", "DIG", "HDG", "CEO", "TCH",
-    "IJC", "SJS", "TDH", "AGG", "LDG",
-    # Consumer / Retail
-    "VNM", "MSN", "MWG", "PNJ", "SAB", "KDC", "MCH", "VHC", "ANV", "HSG",
-    # Industry / Steel
-    "HPG", "NKG", "SMC", "TLH", "VGC",
+    "BVH", "SSI", "VCI", "HCM", "VND", "FTS", "VIX", "CTS", "BSI", "DSE",
+    
+    # Real Estate & Industrial Parks
+    "VHM", "VIC", "VRE", "DXG", "KDH", "PDR", "DIG", "HDG", "TCH", "SJS",
+    "BCM", "CII", "DXS", "HDC", "KBC", "KOS", "NLG", "SIP", "SZC", "VPI",
+    
+    # Consumer / Retail / Agriculture
+    "VNM", "MSN", "MWG", "PNJ", "SAB", "KDC", "VHC", "ANV", "DBC", "DGW",
+    "FRT", "HAG", "PAN", "SBT", "TLG",
+    
+    # Industry / Steel / Construction / Materials
+    "HPG", "NKG", "HSG", "VGC", "CTD", "PC1", "VCG", "HHV", "HT1", "PTB",
+    
     # Oil & Gas / Utilities
-    "GAS", "PLX", "POW", "PGV", "NT2", "REE", "PPC", "HND", "CHP", "SBA",
-    # Technology
-    "FPT", "CMG", "ELC", "ITD",
+    "GAS", "PLX", "POW", "NT2", "REE", "PPC", "BWE", "GEE", "GEX", "PVD",
+    "PVT",
+    
+    # Technology & Telecommunications
+    "FPT", "CMG", "CTR", "VTP",
+    
     # Logistics / Aviation
-    "ACV", "HVN", "VJC", "GMD", "HAH",
-    # Construction / Materials
-    "VRE", "CTD", "BCG", "LCG", "PC1", "VCG", "C4G", "HHV",
-    # Other
-    "DPM", "DCM", "BMP", "CSV", "RAL",
+    "VJC", "GMD", "SCS", "VSC",
+    
+    # Chemicals / Healthcare / Other
+    "DPM", "DCM", "BMP", "DGC", "GVR", "PHR", "IMP"
 ]
 
 VN100_DEFAULT = [
@@ -61,26 +69,34 @@ VN100_DEFAULT = [
 #    "ACB", "FPT", "MWG", "SSI", "GAS", "PLX", "VRE", "HDB", "VPB", "STB",
     # Banking
     "VCB", "BID", "CTG", "MBB", "TCB", "ACB", "STB", "HDB", "VPB", "LPB",
-    "OCB", "EIB", "MSB", "SHB", "TPB", "ABB", "BAB", "NVB", "SSB", "VIB",
+    "OCB", "EIB", "MSB", "SHB", "TPB", "SSB", "VIB", "NAB", "EVF",
+    
     # Insurance / Securities
-    "BVH", "SSI", "VCI", "HCM", "SHS", "VND", "FTS", "VIX", "CTS", "BSI",
-    # Real Estate
-    "VHM", "VIC", "NVL", "DXG", "KDH", "PDR", "DIG", "HDG", "CEO", "TCH",
-    "IJC", "SJS", "TDH", "AGG", "LDG",
-    # Consumer / Retail
-    "VNM", "MSN", "MWG", "PNJ", "SAB", "KDC", "MCH", "VHC", "ANV", "HSG",
-    # Industry / Steel
-    "HPG", "NKG", "SMC", "TLH", "VGC",
+    "BVH", "SSI", "VCI", "HCM", "VND", "FTS", "VIX", "CTS", "BSI", "DSE",
+    
+    # Real Estate & Industrial Parks
+    "VHM", "VIC", "VRE", "DXG", "KDH", "PDR", "DIG", "HDG", "TCH", "SJS",
+    "BCM", "CII", "DXS", "HDC", "KBC", "KOS", "NLG", "SIP", "SZC", "VPI",
+    
+    # Consumer / Retail / Agriculture
+    "VNM", "MSN", "MWG", "PNJ", "SAB", "KDC", "VHC", "ANV", "DBC", "DGW",
+    "FRT", "HAG", "PAN", "SBT", "TLG",
+    
+    # Industry / Steel / Construction / Materials
+    "HPG", "NKG", "HSG", "VGC", "CTD", "PC1", "VCG", "HHV", "HT1", "PTB",
+    
     # Oil & Gas / Utilities
-    "GAS", "PLX", "POW", "PGV", "NT2", "REE", "PPC", "HND", "CHP", "SBA",
-    # Technology
-    "FPT", "CMG", "ELC", "ITD",
+    "GAS", "PLX", "POW", "NT2", "REE", "PPC", "BWE", "GEE", "GEX", "PVD",
+    "PVT",
+    
+    # Technology & Telecommunications
+    "FPT", "CMG", "CTR", "VTP",
+    
     # Logistics / Aviation
-    "ACV", "HVN", "VJC", "GMD", "HAH",
-    # Construction / Materials
-    "VRE", "CTD", "BCG", "LCG", "PC1", "VCG", "C4G", "HHV",
-    # Other
-    "DPM", "DCM", "BMP", "CSV", "RAL",
+    "VJC", "GMD", "SCS", "VSC",
+    
+    # Chemicals / Healthcare / Other
+    "DPM", "DCM", "BMP", "DGC", "GVR", "PHR", "IMP"
 ]
 
 
