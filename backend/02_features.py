@@ -1,7 +1,7 @@
 """
 Module 02 — Feature Engineering
 ================================
-Computes all ~190 features defined in VN100_Full_Master_Plan.md
+Computes all 217 features defined in VN100_Full_Master_Plan.md
 Parts A (9 strategies), B (additional indicators), F (experiential rules).
 
 Input : data/raw/{TICKER}.csv

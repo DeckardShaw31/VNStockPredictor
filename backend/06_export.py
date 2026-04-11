@@ -197,8 +197,15 @@ def build_ticker_payload(ticker: str) -> dict | None:
             "STOCH_RSI":          "proba_fwd_positive_t180",
         }
         proba_key = target_map.get(strat, "proba_fwd_positive_t20")
-        model_p   = model_proba.get(proba_key, signal.get("dir_prob", 50) / 100)
-        signal_enriched["model_dir_prob"] = round(float(model_p) * 100, 1)
+        raw_model_p = model_proba.get(proba_key, None)
+        hist_wr     = float(signal.get("win_rate_hist", 60))
+        dir_prob    = float(signal.get("dir_prob", hist_wr))
+        if raw_model_p is not None:
+            # Model gives 0-1; floor at 80% of historical win rate to avoid garbage
+            model_pct = float(raw_model_p) * 100
+            signal_enriched["model_dir_prob"] = round(max(model_pct, hist_wr * 0.80), 1)
+        else:
+            signal_enriched["model_dir_prob"] = round(dir_prob, 1)
 
     # Last-row indicators for dashboard cards
     indicators = {
@@ -231,6 +238,35 @@ def build_ticker_payload(ticker: str) -> dict | None:
         "actionReason":       _build_action_reason(last_row, signal),
         "directionProb":      signal_enriched.get("model_dir_prob", signal.get("dir_prob", 50)),
     }
+
+    # ── Signal state vs today's close ─────────────────────────────────────────
+    sig_state = {}
+    try:
+        if signal_enriched.get("tier", 0) > 0 and signal_enriched.get("base_price"):
+            base   = float(signal_enriched.get("base_price", current_price))
+            tgt    = float(signal_enriched.get("target",    base * 1.12))
+            stop   = float(signal_enriched.get("stop_loss", base * 0.94))
+            elo    = float(signal_enriched.get("entry_lo",  base * 0.98))
+            ehi    = float(signal_enriched.get("entry_hi",  base * 1.01))
+            exp_d  = signal_enriched.get("exit_date", "9999-12-31")
+            today_s = datetime.now().strftime("%Y-%m-%d")
+            held_pct = round((current_price - base) / max(base, 1) * 100, 1)
+            if current_price >= tgt:
+                sig_state = {"code":"TARGET_HIT","label":"🎯 Chốt lời","cls":"state-target","action":"SELL","held_pct":held_pct}
+            elif current_price <= stop:
+                sig_state = {"code":"STOP_HIT","label":"🔴 Cắt lỗ ngay","cls":"state-stop","action":"SELL","held_pct":held_pct}
+            elif today_s >= exp_d:
+                sig_state = {"code":"EXPIRED","label":"⏰ Hết hạn","cls":"state-expired","action":"REVIEW","held_pct":held_pct}
+            elif elo * 0.99 <= current_price <= ehi * 1.01:
+                sig_state = {"code":"ENTRY_ZONE","label":"🟡 Vùng mua vào","cls":"state-entry","action":"BUY","held_pct":held_pct}
+            elif current_price > ehi:
+                sig_state = {"code":"HOLDING","label":"🔵 Đang giữ lệnh","cls":"state-holding","action":"HOLD","held_pct":held_pct}
+            else:
+                sig_state = {"code":"WATCHING","label":"👀 Chờ điểm vào","cls":"state-watch","action":"WATCH","held_pct":held_pct}
+    except Exception:
+        pass
+    signal_enriched["signal_state"] = sig_state
+    signal_enriched["today_action"] = sig_state.get("action", "WATCH") if sig_state else "WATCH"
 
     # ── Backtest equity curve + trades ───────────────────────────────────────────
     backtest_equity = []
