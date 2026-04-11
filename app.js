@@ -157,6 +157,16 @@ function buildFilterBar(tickers){
 function applyFilter(f){
   activeFilter=f;
   buildFilterBar(Object.keys(UI_DATA.tickers||{}));
+  filterSignalsTab();
+}
+
+function filterSignalsTab(){
+  document.querySelectorAll('#all-signals-wrap .signal-card').forEach(card=>{
+    if(activeFilter==='ALL'){card.style.display='';return;}
+    const action=card.dataset.action||'WATCH';
+    const map={BUY:'BUY',HOLD:'HOLD',SELL:'SELL',REVIEW:'EXPIRED',WATCH:'WATCH'};
+    card.style.display=(map[action]||'WATCH')===activeFilter?'':'none';
+  });
 }
 
 function filterTickerBar(tickers){
@@ -184,6 +194,11 @@ function buildTickerBar(tickers){
     btn.innerHTML=t+dot;btn.onclick=()=>selectTicker(t);
     bar.appendChild(btn);
   });
+  // Mouse wheel scrolls horizontally (no need for trackpad)
+  bar.addEventListener('wheel',e=>{
+    e.preventDefault();
+    bar.scrollLeft+=e.deltaY!==0?e.deltaY:e.deltaX;
+  },{passive:false});
 }
 
 /* ── TICKER SWITCH WITH ANIMATION ───────────────────────── */
@@ -418,7 +433,10 @@ document.addEventListener('DOMContentLoaded',()=>{
       const vh=document.getElementById('vol-hover');
       if(vh)vh.textContent=`KL: ${(r.volume/1e6).toFixed(2)}M  ×${(r.relVolume||1).toFixed(2)}`;
       const tt=document.getElementById('chart-tooltip');
-      tt.style.display='block';tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-10)+'px';
+      tt.style.display='block';
+      const ttW=tt.offsetWidth||170;
+      const leftPos=e.clientX+ttW+20>window.innerWidth?e.clientX-ttW-14:e.clientX+14;
+      tt.style.left=leftPos+'px';tt.style.top=(e.clientY-10)+'px';
     });
     wrap.addEventListener('mouseleave',()=>{
       drawXhair(-1,chartData);
@@ -565,6 +583,18 @@ function renderBacktest(d){
   const m=d.metrics||{},bt=d.backtest||{};
   const equity=bt.equity||[],trades=bt.trades||[];
   const scale=getPriceScale(d),c=v=>v>=0?'up':'down';
+
+  // Profit factor: cap display when there are no losses (division near zero)
+  const rawPf = m.profit_factor || 0;
+  const pfDisplay = !isFinite(rawPf) || rawPf > 9999 ? '∞' : rawPf.toFixed(2);
+  const pfClass = rawPf >= 1.5 || !isFinite(rawPf) ? 'up' : 'down';
+
+  // Total gain in VND from backtest
+  const finalCap = m.final_capital || 100_000_000;
+  const gainVnd = finalCap - 100_000_000;
+  const gainM = (gainVnd / 1e6).toFixed(2);
+  const gainSign = gainVnd >= 0 ? '+' : '';
+
   document.getElementById('bt-stats-grid').innerHTML=`
     <div class="stat-card" style="--accent-color:${(m.ann_return||0)>=0?'var(--green)':'var(--red)'}">
       <div class="stat-label">Annual Return (CAGR)</div><div class="stat-value ${c(m.ann_return||0)}">${((m.ann_return||0)*100).toFixed(1)}%</div></div>
@@ -574,8 +604,12 @@ function renderBacktest(d){
       <div class="stat-label">Win Rate</div><div class="stat-value">${((m.win_rate||0)*100).toFixed(1)}%</div>
       <div class="stat-sub neu">${m.n_trades||0} giao dịch</div></div>
     <div class="stat-card" style="--accent-color:var(--purple)">
-      <div class="stat-label">Profit Factor</div><div class="stat-value ${(m.profit_factor||0)>=1.5?'up':'down'}">${(m.profit_factor||0).toFixed(2)}</div>
-      <div class="stat-sub ${c(m.max_drawdown||0)}">DD: ${((m.max_drawdown||0)*100).toFixed(1)}%</div></div>`;
+      <div class="stat-label">Profit Factor</div><div class="stat-value ${pfClass}">${pfDisplay}</div>
+      <div class="stat-sub ${c(m.max_drawdown||0)}">DD: ${((m.max_drawdown||0)*100).toFixed(1)}%</div></div>
+    <div class="stat-card" style="--accent-color:${gainVnd>=0?'var(--green)':'var(--red)'}">
+      <div class="stat-label">Lợi nhuận tuyệt đối</div>
+      <div class="stat-value ${gainVnd>=0?'up':'down'}">${gainSign}${gainM}M ₫</div>
+      <div class="stat-sub ${gainVnd>=0?'up':'down'}">${gainSign}${((gainVnd/100_000_000)*100).toFixed(1)}% tổng vốn</div></div>`;
 
   const posEl=document.getElementById('bt-position-badge');
   const sig=d.signal||{};
@@ -666,7 +700,10 @@ function attachBacktestHover(equity){
       <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:var(--muted)">Vốn</span><span>${(pt.equity/1e6).toFixed(2)}M ₫</span></div>
       <div style="display:flex;justify-content:space-between;gap:14px;margin-top:2px;"><span style="color:var(--muted)">Phiên</span><span style="color:${ret>=0?'var(--green)':'var(--red)'}">${ret>=0?'+':''}${ret.toFixed(2)}%</span></div>
       <div style="display:flex;justify-content:space-between;gap:14px;margin-top:2px;"><span style="color:var(--muted)">Tổng</span><span style="color:${total>=0?'var(--green)':'var(--red)'}">${total>=0?'+':''}${total.toFixed(1)}%</span></div>`;
-    tt.style.display='block';tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-10)+'px';
+    tt.style.display='block';
+    const ttW=tt.offsetWidth||160;
+    const leftPos=e.clientX+ttW+20>window.innerWidth?e.clientX-ttW-14:e.clientX+14;
+    tt.style.left=leftPos+'px';tt.style.top=(e.clientY-10)+'px';
   });
   cvs.addEventListener('mouseleave',()=>{tt.style.display='none';});
 }
@@ -685,6 +722,7 @@ function buildAllSignalsTab(){
     const state=getSignalState(sig,cp,scale);
     const{target,rewardPct}=computeSignalPrices(sig,base);
     const card=document.createElement('div');card.className='signal-card';
+    card.dataset.action=state?.action||'WATCH';
     card.style.setProperty('--sig-color',state?.action==='SELL'?'var(--red)':state?.action==='HOLD'?'var(--blue)':col);
     card.style.cursor='pointer';
     card.innerHTML=`

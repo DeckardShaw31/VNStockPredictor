@@ -311,7 +311,7 @@ main { max-width: 1440px; margin: 0 auto; padding: 16px 24px; }
 }
 
 /* ── Backtest tab ─────────────────────────────────────── */
-.bt-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 16px; }
+.bt-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 16px; }
 .bt-chart-wrap {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 10px; overflow: hidden; margin-bottom: 16px;
@@ -369,7 +369,8 @@ main { max-width: 1440px; margin: 0 auto; padding: 16px 24px; }
 /* ── Responsive ──────────────────────────────────────── */
 @media (max-width: 1024px) {
   .main-grid { grid-template-columns: 1fr; }
-  .stats-grid, .bt-grid { grid-template-columns: repeat(2,1fr); }
+  .stats-grid { grid-template-columns: repeat(2,1fr); }
+  .bt-grid { grid-template-columns: repeat(3,1fr); }
 }
 @media (max-width: 640px) {
   .stats-grid, .bt-grid { grid-template-columns: 1fr 1fr; }
